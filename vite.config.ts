@@ -1,10 +1,19 @@
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import react from '@vitejs/plugin-react'
+import * as path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
   base: '/calculadora-deleite/',
+  resolve: {
+    alias: {
+      '@pages': path.resolve(__dirname, 'src/Pages'),
+      '@components': path.resolve(__dirname, 'src/Components'),
+      '@models': path.resolve(__dirname, 'src/models'),
+      '@helpers': path.resolve(__dirname, 'src/helpers'),
+    },
+  },
   plugins: [
     react(),
     VitePWA({

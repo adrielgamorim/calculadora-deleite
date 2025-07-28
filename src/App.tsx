@@ -1,9 +1,9 @@
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './Layout';
-import { Home } from './Pages/Home';
-import { Ingredients } from './Pages/Ingredients';
-import { Bundles } from './Pages/Bundles';
-import { Sweets } from './Pages/Sweets';
+import { Home } from '@pages/Home';
+import { Ingredients } from '@pages/Ingredients';
+import { Bundles } from '@pages/Bundles';
+import { Sweets } from '@pages/Sweets';
 import './App.css';
 
 function App() {
