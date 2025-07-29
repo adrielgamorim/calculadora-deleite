@@ -4,13 +4,13 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDCZtDHtJbGDHY4Dy2TXTh-Cd9TB6Ouz5M",
+  apiKey: process.env.API_KEY,
   authDomain: "calculadora-deleite.firebaseapp.com",
   projectId: "calculadora-deleite",
   storageBucket: "calculadora-deleite.firebasestorage.app",
-  messagingSenderId: "499021770511",
-  appId: "1:499021770511:web:dd150600ceebee0364587a",
-  measurementId: "G-H1NYDH4PM8"
+  messagingSenderId: process.env.MESSAGING_SENDER_ID,
+  appId: process.env.APP_ID,
+  measurementId: process.env.MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);

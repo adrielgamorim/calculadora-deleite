@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Ingredient } from "@models/Ingredient";
-import { getCollectionData, addDocument, updateDocument, deleteDocument } from "@helpers/handleDatabase";
+import { getCollectionData, addDocument, deleteDocument } from "@helpers/handleDatabase";
 import { Button } from "@components/Button";
 
 export function Ingredients() {
@@ -26,13 +26,13 @@ export function Ingredients() {
 
   async function handleAddIngredient(): Promise<void> {
     const newIngredient: Ingredient = {
-      name: "",
-      price: 0,
-      quantity: 0,
-      unit: "",
-      used_in_frame_15: 0,
-      used_in_frame_25: 0,
-      used_in_frame_35: 0,
+      name: "Farinha",
+      price: 4,
+      quantity: 1000,
+      unit: "g",
+      used_in_frame_15: 400,
+      used_in_frame_25: 800,
+      used_in_frame_35: 1200,
     };
     await addDocument("ingredients", newIngredient);
     const localIngredients = ingredients.concat(newIngredient);
