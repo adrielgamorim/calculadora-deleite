@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Ingredient } from "@models/Ingredient";
-import { getCollectionData, addDocument, deleteDocument } from "@helpers/handleDatabase";
+import { getDocuments, addDocument, deleteDocument } from "@helpers/requests";
 import { Button } from "@components/Button";
 
 export function Ingredients() {
@@ -8,18 +8,7 @@ export function Ingredients() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await getCollectionData("ingredients");
-      // Ensure each ingredient has all required properties
-      const formattedData: Ingredient[] = data.map((item: any) => ({
-        name: item.name ?? "",
-        price: item.price ?? 0,
-        quantity: item.quantity ?? 0,
-        unit: item.unit ?? "",
-        used_in_frame_15: item.used_in_frame_15 ?? 0,
-        used_in_frame_25: item.used_in_frame_25 ?? 0,
-        used_in_frame_35: item.used_in_frame_35 ?? 0,
-      }));
-      setIngredients(formattedData);
+      setIngredients(await getDocuments("ingredients"));
     };
     fetchData();
   }, []);
@@ -35,15 +24,14 @@ export function Ingredients() {
       used_in_frame_35: 1200,
     };
     await addDocument("ingredients", newIngredient);
-    const localIngredients = ingredients.concat(newIngredient);
-    setIngredients(localIngredients);
+    setIngredients(await getDocuments("ingredients"));
   }
 
-  async function handleDelIngredient(): Promise<void> {
-    for (const ingredient of ingredients) {
-      await deleteDocument("ingredients", ingredient.id!);
+  async function handleDelIngredient(id: string): Promise<void> {
+    if (window.confirm("Tem certeza que deseja remover este ingrediente?")) {
+      await deleteDocument("/ingredients/", id);
+      setIngredients(await getDocuments("ingredients"));
     }
-    setIngredients([]);
   }
 
   return (
@@ -58,9 +46,7 @@ export function Ingredients() {
       <span><input type="number" placeholder="Qnt usada no aro 15" /></span>
       <span><input type="number" placeholder="Qnt usada no aro 25" /></span>
       <span><input type="number" placeholder="Qnt usada no aro 35" /></span>
-      <Button label="Adicionar Ingrediente" onClick={() =>handleAddIngredient()} />
-
-      <Button label="Deletar Ingredientes" onClick={() =>handleDelIngredient()} />
+      <Button label="Adicionar Ingrediente" onClick={() => handleAddIngredient()} />
 
       <ul>
         <table>
@@ -73,18 +59,20 @@ export function Ingredients() {
               <th>Qnt usada no aro 15</th>
               <th>Qnt usada no aro 25</th>
               <th>Qnt usada no aro 35</th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody>
             {ingredients.map(ingredient => (
-              <tr key={ingredient.id}>
-                <td>{ingredient.name}</td>
-                <td>{ingredient.price}</td>
-                <td>{ingredient.quantity}</td>
-                <td>{ingredient.unit}</td>
-                <td>{ingredient.used_in_frame_15}</td>
-                <td>{ingredient.used_in_frame_25}</td>
-                <td>{ingredient.used_in_frame_35}</td>
+              <tr key={ ingredient.id }>
+                <td>{ ingredient.name }</td>
+                <td>{ ingredient.price }</td>
+                <td>{ ingredient.quantity }</td>
+                <td>{ ingredient.unit }</td>
+                <td>{ ingredient.used_in_frame_15 }</td>
+                <td>{ ingredient.used_in_frame_25 }</td>
+                <td>{ ingredient.used_in_frame_35 }</td>
+                <td><Button label={ "❌" } onClick={() => handleDelIngredient(ingredient.id!)} /></td>
               </tr>
             ))}
           </tbody>
