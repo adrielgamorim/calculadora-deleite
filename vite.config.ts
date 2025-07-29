@@ -16,6 +16,8 @@ export default defineConfig({
       '@components': path.resolve(__dirname, 'src/Components'),
       '@models': path.resolve(__dirname, 'src/models'),
       '@helpers': path.resolve(__dirname, 'src/helpers'),
+      '@requests': path.resolve(__dirname, 'src/requests'),
+      '@data': path.resolve(__dirname, 'src/data'),
     },
   },
   plugins: [
