@@ -2,8 +2,12 @@ import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import react from '@vitejs/plugin-react'
 import * as path from 'path'
+import dotenv from 'dotenv';
 
-// https://vite.dev/config/
+// Load environment variables from .env file
+dotenv.config();
+
+  // https://vite.dev/config/
 export default defineConfig({
   base: '/calculadora-deleite/',
   resolve: {
