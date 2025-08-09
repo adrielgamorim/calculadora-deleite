@@ -4,6 +4,8 @@ import { Home } from '@pages/Home';
 import { Ingredients } from '@pages/Ingredients';
 import { Bundles } from '@pages/Bundles';
 import { Sweets } from '@pages/Sweets';
+import { Dashboard } from '@pages/Dashboard';
+import { Config } from '@pages/Config';
 import './App.css';
 
 function App() {
@@ -16,6 +18,8 @@ function App() {
           <Route path="/ingredientes" element={<Ingredients />} />
           <Route path="/conjuntos" element={<Bundles />} />
           <Route path="/bolos" element={<Sweets />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/config" element={<Config />} />
         </Route>
       </Routes>
     </Router>

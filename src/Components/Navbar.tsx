@@ -16,6 +16,12 @@ export function Navbar() {
       <Link to="/bolos">
         <Button label={ "Bolos" } />
       </Link>
+      <Link to="/dashboard">
+        <Button label={ "Dashboard" } />
+      </Link>
+      <Link to="/config">
+        <Button label={ "Configurações" } />
+      </Link>
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import type { Ingredient } from "@models/Ingredient";
 import { getDocuments, addDocument, deleteDocument } from "@requests/requests";
 import { endpoints } from "@data/endpoints";
 import { Button } from "@components/Button";
+import { helpers } from "@helpers/helpers";
+import type { Ingredient } from "@models/Ingredient";
 import type { Bundle } from "@models/Bundle";
 
 export function Ingredients() {
@@ -28,12 +29,12 @@ export function Ingredients() {
   function getIngredientValuesToAdd(): Ingredient {
     return {
       name: (document.getElementById("ingredient-name") as HTMLInputElement)?.value || "",
-      price: Number((document.getElementById("ingredient-price") as HTMLInputElement)?.value) || 0,
-      quantity: Number((document.getElementById("ingredient-quantity") as HTMLInputElement)?.value) || 0,
+      price: helpers.parseDecimal((document.getElementById("ingredient-price") as HTMLInputElement)?.value) || 0,
+      quantity: helpers.parseDecimal((document.getElementById("ingredient-quantity") as HTMLInputElement)?.value) || 0,
       unit: (document.getElementById("ingredient-unit") as HTMLInputElement)?.value || "",
-      used_in_frame_15: Number((document.getElementById("ingredient-frame15") as HTMLInputElement)?.value) || 0,
-      used_in_frame_25: Number((document.getElementById("ingredient-frame25") as HTMLInputElement)?.value) || 0,
-      used_in_frame_35: Number((document.getElementById("ingredient-frame35") as HTMLInputElement)?.value) || 0,
+      used_in_frame_15: helpers.parseDecimal((document.getElementById("ingredient-frame15") as HTMLInputElement)?.value) || 0,
+      used_in_frame_25: helpers.parseDecimal((document.getElementById("ingredient-frame25") as HTMLInputElement)?.value) || 0,
+      used_in_frame_35: helpers.parseDecimal((document.getElementById("ingredient-frame35") as HTMLInputElement)?.value) || 0,
     };
   }
 

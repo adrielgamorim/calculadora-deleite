@@ -22,7 +22,7 @@ export function Bundles() {
 
   async function handleAddBundle(bundle: Bundle): Promise<void> {
     if (!bundle.name) {
-      alert("Por favor, preencha o campo Nome.");
+      alert("Por favor, preencha o Nome.");
       return;
     }
     if (selectedIngredients.length <= 1) {
@@ -65,7 +65,7 @@ export function Bundles() {
       <form id="bundle-form">
         <input id="bundle-name" type="text" placeholder="Nome do Conjunto*" />
         <Select options={getIngredientOptionsForSelect()} onChange={handleOptionsChange} isMulti id="bundle-ingredients" placeholder="Selecione os Ingredientes*" />
-        <Button label="Adicionar Bundle" onClick={() => handleAddBundle(getBundleToAdd())} />
+        <Button label="Adicionar Conjunto" onClick={() => handleAddBundle(getBundleToAdd())} />
       </form>
 
       {bundles.length === 0 ? <p>Nenhum Conjunto encontrado.</p> : (
