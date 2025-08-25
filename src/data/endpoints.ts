@@ -1,6 +1,6 @@
-export const endpoints = {
-    ingredients: "/ingredients/",
-    bundles: "/bundles/",
-    sweets: "/sweets/",
-    config: "/config/",
+export class Endpoints {
+    static ingredients = "/ingredients/";
+    static bundles = "/bundles/";
+    static cakes = "/cakes/";
+    static config = "/config/";
 }

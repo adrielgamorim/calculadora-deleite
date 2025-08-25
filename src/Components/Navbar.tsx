@@ -3,7 +3,7 @@ import { Button } from "@components/Button";
 
 export function Navbar() {
   return (
-    <div>
+    <nav>
       <Link to="/">
         <Button label={ "Home" } />
       </Link>
@@ -22,6 +22,6 @@ export function Navbar() {
       <Link to="/config">
         <Button label={ "Configurações" } />
       </Link>
-    </div>
+    </nav>
   );
 }

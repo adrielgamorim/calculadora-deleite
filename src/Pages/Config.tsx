@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import type { Config as ConfigModel } from "@models/Config";
 import { getDocuments, addDocument, updateDocument } from "@requests/requests";
-import { endpoints } from "@data/endpoints";
+import { Endpoints } from "@data/Endpoints";
 import { helpers } from "@helpers/helpers";
 
 export function Config() {
@@ -12,12 +12,12 @@ export function Config() {
     frame25PackagingPrice: 0.0,
     frame35PackagingPrice: 0.0,
     slicePackagingPrice: 0.0,
-    ifoodFee: 0.0,
+    ifoodTax: 0.0,
   });
 
   useEffect(() => {
     const fetchConfig = async () => {
-      setConfig(await getDocuments<ConfigModel>(endpoints.config).then(data => data[0] || ((c: ConfigModel) => c)));
+      setConfig(await getDocuments<ConfigModel>(Endpoints.config).then(data => data[0] || ((c: ConfigModel) => c)));
     };
     fetchConfig();
   }, []);
@@ -30,7 +30,7 @@ export function Config() {
       frame25PackagingPrice: helpers.parseDecimal((document.getElementById("frame25-packaging-price") as HTMLInputElement).value),
       frame35PackagingPrice: helpers.parseDecimal((document.getElementById("frame35-packaging-price") as HTMLInputElement).value),
       slicePackagingPrice: helpers.parseDecimal((document.getElementById("slice-packaging-price") as HTMLInputElement).value),
-      ifoodFee: helpers.parseDecimal((document.getElementById("ifood-fee") as HTMLInputElement).value),
+      ifoodTax: helpers.parseDecimal((document.getElementById("ifood-fee") as HTMLInputElement).value),
     };
   }
 
@@ -41,11 +41,11 @@ export function Config() {
     if (isNaN(newConfig.frame25PackagingPrice)) newConfig.frame25PackagingPrice = config.frame25PackagingPrice;
     if (isNaN(newConfig.frame35PackagingPrice)) newConfig.frame35PackagingPrice = config.frame35PackagingPrice;
     if (isNaN(newConfig.slicePackagingPrice)) newConfig.slicePackagingPrice = config.slicePackagingPrice;
-    if (isNaN(newConfig.ifoodFee)) newConfig.ifoodFee = config.ifoodFee;
+    if (isNaN(newConfig.ifoodTax)) newConfig.ifoodTax = config.ifoodTax;
     if (config.id) {
-      await updateDocument<ConfigModel>(endpoints.config, config.id, newConfig);
+      await updateDocument<ConfigModel>(Endpoints.config, config.id, newConfig);
     } else {
-      await addDocument<ConfigModel>(endpoints.config, newConfig);
+      await addDocument<ConfigModel>(Endpoints.config, newConfig);
     }
     setConfig(newConfig);
     alert("Configurações salvas com sucesso!");
@@ -71,7 +71,7 @@ export function Config() {
             type="text"
             id="ifood-fee"
             name="ifood-fee"
-            placeholder={config.ifoodFee.toString()}
+            placeholder={config.ifoodTax.toString()}
           />
         </div>
 

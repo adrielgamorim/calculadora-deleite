@@ -6,5 +6,5 @@ export interface Config extends Base {
     frame25PackagingPrice: number;
     frame35PackagingPrice: number;
     slicePackagingPrice: number;
-    ifoodFee: number;
+    ifoodTax: number;
 }

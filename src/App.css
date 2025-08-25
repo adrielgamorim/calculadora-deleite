@@ -3,28 +3,33 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  overflow: auto;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+ul {
+  list-style-type: none;
+  padding: 0;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* #ingredient-form {
+  width: 30%;
+  background-color: #212121;
+  padding: 1rem;
+  border-radius: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 4px 16px #4E342E;
+  position: absolute;
+  top: -100%;
+  right: 20%;
+  transition: all .8s ease-in-out;
+} */
+
+.ingredient-form-group {
+  display: flex;
+  gap: .5rem;
+  justify-content: space-between;
 }
 
 @media (prefers-reduced-motion: no-preference) {

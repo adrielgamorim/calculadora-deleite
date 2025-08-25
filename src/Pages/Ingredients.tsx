@@ -1,29 +1,34 @@
-import { useEffect, useState } from "react";
-import { getDocuments, addDocument, deleteDocument } from "@requests/requests";
-import { endpoints } from "@data/endpoints";
-import { Button } from "@components/Button";
-import { helpers } from "@helpers/helpers";
-import type { Ingredient } from "@models/Ingredient";
+import type { Cake } from "@models/Cake";
 import type { Bundle } from "@models/Bundle";
+import type { Ingredient } from "@models/Ingredient";
+import { Common } from "@data/Common";
+import { helpers } from "@helpers/helpers";
+import { Button } from "@components/Button";
+import { Endpoints } from "@data/Endpoints";
+import { useEffect, useState } from "react";
+import { IngredientForm } from "@components/IngredientForm";
+import { getDocuments, addDocument, deleteDocument } from "@requests/requests";
 
 export function Ingredients() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [showAddIngredientMenu, setShowAddIngredientMenu] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
-      setIngredients(await getDocuments<Ingredient>(endpoints.ingredients));
+      setIngredients(await getDocuments<Ingredient>(Endpoints.ingredients));
     };
     fetchData();
   }, []);
 
   async function handleAddIngredient(ingredient: Ingredient): Promise<void> {
-    if(!ingredient.name || !ingredient.price || !ingredient.quantity || !ingredient.unit) {
+    if (!ingredient.name || !ingredient.price || !ingredient.quantity || !ingredient.unit) {
       alert("Por favor, preencha os campos obrigatórios.");
       return;
     }
-    await addDocument<Ingredient>(endpoints.ingredients, ingredient);
+    await addDocument<Ingredient>(Endpoints.ingredients, ingredient);
     (document.getElementById("ingredient-form") as HTMLFormElement)?.reset();
-    setIngredients(await getDocuments<Ingredient>(endpoints.ingredients));
+    setIngredients(await getDocuments<Ingredient>(Endpoints.ingredients));
+    setShowAddIngredientMenu(false);
   }
 
   function getIngredientValuesToAdd(): Ingredient {
@@ -39,19 +44,38 @@ export function Ingredients() {
   }
 
   async function handleDelIngredient(id: string): Promise<void> {
-    if(await checkIngredientIsUsedInBundles(id)) {
+    if (await checkIngredientIsUsedInBundles(id)) {
       alert("Este ingrediente está sendo usado em um conjunto e não pode ser removido.");
       return;
     }
+    if (await checkIngredientIsUsedInCakes(id)) {
+      alert("Este ingrediente está sendo usado em um bolo e não pode ser removido.");
+      return;
+    }
+
     if (window.confirm("Tem certeza que deseja remover este ingrediente?")) {
-      await deleteDocument(endpoints.ingredients, id);
-      setIngredients(await getDocuments<Ingredient>(endpoints.ingredients));
+      await deleteDocument(Endpoints.ingredients, id);
+      setIngredients(await getDocuments<Ingredient>(Endpoints.ingredients));
     }
   }
 
   async function checkIngredientIsUsedInBundles(ingredientId: string): Promise<boolean> {
-    const bundles = await getDocuments<Bundle>(endpoints.bundles);
+    const bundles = await getDocuments<Bundle>(Endpoints.bundles);
     return bundles.some(bundle => bundle.ingredients.some(ingredient => ingredient.id === ingredientId));
+  }
+
+  async function checkIngredientIsUsedInCakes(ingredientId: string): Promise<boolean> {
+    const cakes = await getDocuments<Cake>(Endpoints.cakes);
+    return cakes.some(cake => cake.ingredients!.some(ingredient => ingredient.id === ingredientId));
+  }
+
+  function handleAddIngredientMenu(): void {
+    setShowAddIngredientMenu(!showAddIngredientMenu);
+    if (showAddIngredientMenu) {
+      const formElement = document.getElementById("ingredient-form");
+      formElement!.style.top = "20%";
+      console.log(formElement?.style.top);
+    }
   }
 
   return (
@@ -59,55 +83,39 @@ export function Ingredients() {
       <h1>Lista de Ingredientes</h1>
       <p>Aqui você pode ver e adicionar novos ingredientes.</p>
 
-      <form id="ingredient-form">
-        <input id="ingredient-name" type="text" placeholder="Nome do Ingrediente*" />
-        <input id="ingredient-price" type="number" placeholder="Preço*" />
-        <input id="ingredient-quantity" type="number" placeholder="Quantidade*" />
-        <select id="ingredient-unit" defaultValue="">
-          <option value="" disabled>Unidade*</option>
-          <option value="kg">kg</option>
-          <option value="g">g</option>
-          <option value="l">l</option>
-          <option value="ml">ml</option>
-          <option value="un">un</option>
-        </select>
-        <input id="ingredient-frame15" type="number" placeholder="Qnt usada no aro 15" />
-        <input id="ingredient-frame25" type="number" placeholder="Qnt usada no aro 25" />
-        <input id="ingredient-frame35" type="number" placeholder="Qnt usada no aro 35" />
-        <Button label="Adicionar Ingrediente" onClick={() => handleAddIngredient(getIngredientValuesToAdd())} />
-      </form>
+      {/* <Button label={showAddIngredientMenu ? "Fechar menu" : "Abrir menu"} onClick={handleAddIngredientMenu} /> */}
+      <Button label={showAddIngredientMenu ? "Fechar menu" : "Adicionar Ingrediente"} onClick={() => setShowAddIngredientMenu(!showAddIngredientMenu)} />
+      {showAddIngredientMenu && <IngredientForm handleOnClick={() => handleAddIngredient(getIngredientValuesToAdd())} />}
 
       {ingredients.length === 0 ? <p>Nenhum ingrediente encontrado.</p> : (
-        <ul>
-          <table>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Preço</th>
-                <th>Quantidade</th>
-                <th>Unidade</th>
-                <th>Qnt usada no aro 15</th>
-                <th>Qnt usada no aro 25</th>
-                <th>Qnt usada no aro 35</th>
-                <th>Ações</th>
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Preço</th>
+              <th>Quantidade</th>
+              <th>Unidade</th>
+              <th>Qnt usada no aro 15</th>
+              <th>Qnt usada no aro 25</th>
+              <th>Qnt usada no aro 35</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ingredients.map(ingredient => (
+              <tr key={ingredient.id}>
+                <td>{ingredient.name}</td>
+                <td>{ingredient.price}</td>
+                <td>{ingredient.quantity}</td>
+                <td>{ingredient.unit}</td>
+                <td>{ingredient.used_in_frame_15 || Common.noTableItemFoundContent}</td>
+                <td>{ingredient.used_in_frame_25 || Common.noTableItemFoundContent}</td>
+                <td>{ingredient.used_in_frame_35 || Common.noTableItemFoundContent}</td>
+                <td><Button label={Common.deleteButtonLabel} onClick={() => handleDelIngredient(ingredient.id!)} /></td>
               </tr>
-            </thead>
-            <tbody>
-              {ingredients.map(ingredient => (
-                <tr key={ingredient.id}>
-                  <td>{ingredient.name}</td>
-                  <td>{ingredient.price}</td>
-                  <td>{ingredient.quantity}</td>
-                  <td>{ingredient.unit}</td>
-                  <td>{ingredient.used_in_frame_15}</td>
-                  <td>{ingredient.used_in_frame_25}</td>
-                  <td>{ingredient.used_in_frame_35}</td>
-                  <td><Button label={"❌"} onClick={() => handleDelIngredient(ingredient.id!)} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </ul>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );
