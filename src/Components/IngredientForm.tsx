@@ -1,13 +1,18 @@
 import { Button } from "@components/Button";
+import { Common } from "@data/Common";
 
 type IngredientFormProps = {
     handleOnClick: () => Promise<void>;
+    handleCloseMenu: () => void;
 };
 
-export function IngredientForm({ handleOnClick }: IngredientFormProps) {
+export function IngredientForm({ handleOnClick, handleCloseMenu }: IngredientFormProps) {
     return (
         <form id="ingredient-form">
-            <h3>Adicionar Ingrediente</h3>
+            <div className="ingredient-form-header">
+                <h3 className="ingredient-form-title">Adicionar Ingrediente</h3>
+                <Button className="ingredient-form-close-button" label={Common.deleteButtonLabel} onClick={handleCloseMenu} />
+            </div>
             <div className="ingredient-form-group ingredient-form-name">
                 <label htmlFor="ingredient-name">Nome do Ingrediente*: </label>
                 <input id="ingredient-name" type="text" />

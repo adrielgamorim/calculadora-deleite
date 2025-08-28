@@ -11,7 +11,7 @@ ul {
   padding: 0;
 }
 
-/* #ingredient-form {
+#ingredient-form {
   width: 30%;
   background-color: #212121;
   padding: 1rem;
@@ -21,14 +21,29 @@ ul {
   gap: 1rem;
   box-shadow: 0 4px 16px #4E342E;
   position: absolute;
-  top: -100%;
+  top: -100vh;
   right: 20%;
-  transition: all .8s ease-in-out;
-} */
+  transition: all .5s ease-in-out;
+}
+
+.ingredient-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ingredient-form-title {
+  margin: 0 auto;
+}
+
+#ingredient-form .ingredient-form-close-button {
+  background-color: transparent;
+  margin: 0;
+  padding: 0;
+}
 
 .ingredient-form-group {
   display: flex;
-  gap: .5rem;
   justify-content: space-between;
 }
 

@@ -155,8 +155,7 @@ export function Dashboard() {
 
   return (
     <div>
-      <h1>Bem vindo ao Dashboard</h1>
-      <p>Aqui você pode visualizar os preços dos produtos e outras informações relevantes.</p>
+      <h1>Dashboard</h1>
       {prices.length === 0 ? <p>Nenhum bolo encontrado.</p> : (
         <table>
           <thead>

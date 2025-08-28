@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import Select from 'react-select'
+import { useEffect, useState } from "react";  
 import type { MultiValue } from 'react-select';
 import type { Bundle } from "@models/Bundle";
 import { getDocuments, addDocument, deleteDocument } from "@requests/requests";
@@ -7,6 +6,7 @@ import { Endpoints } from "@data/Endpoints";
 import { Button } from "@components/Button";
 import type { Ingredient } from "@models/Ingredient";
 import { Common } from "@data/Common";
+import { BundleForm } from "@components/BundleForm";
 
 export function Bundles() {
   const [bundles, setBundles] = useState<Bundle[]>([]);
@@ -63,11 +63,7 @@ export function Bundles() {
       <h1>Lista de Conjuntos</h1>
       <p>Aqui você pode ver e adicionar novos conjuntos.</p>
 
-      <form id="bundle-form">
-        <input id="bundle-name" type="text" placeholder="Nome do Conjunto*" />
-        <Select options={getIngredientOptionsForSelect()} onChange={handleOptionsChange} isMulti id="bundle-ingredients" placeholder="Selecione os Ingredientes*" />
-        <Button label="Adicionar Conjunto" onClick={() => handleAddBundle(getBundleToAdd())} />
-      </form>
+        {<BundleForm handleOnClick={() => handleAddBundle(getBundleToAdd())} handleCloseMenu={() => {/*setShowAddIngredientMenu(false)*/}} handleOptionsChange={handleOptionsChange} getIngredientOptionsForSelect={getIngredientOptionsForSelect} />}
 
       {bundles.length === 0 ? <p>Nenhum Conjunto encontrado.</p> : (
         <table>

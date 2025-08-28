@@ -20,15 +20,26 @@ export function Ingredients() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const formElement = document.getElementById("ingredient-form");
+    if (formElement) {
+      formElement.style.top = showAddIngredientMenu ? "20vh" : "-100vh";
+    }
+  }, [showAddIngredientMenu]);
+
   async function handleAddIngredient(ingredient: Ingredient): Promise<void> {
     if (!ingredient.name || !ingredient.price || !ingredient.quantity || !ingredient.unit) {
       alert("Por favor, preencha os campos obrigatórios.");
       return;
     }
+    if (ingredients.some(i => i.name === ingredient.name)) {
+      alert("Este ingrediente já está na lista.");
+      return;
+    }
     await addDocument<Ingredient>(Endpoints.ingredients, ingredient);
     (document.getElementById("ingredient-form") as HTMLFormElement)?.reset();
-    setIngredients(await getDocuments<Ingredient>(Endpoints.ingredients));
     setShowAddIngredientMenu(false);
+    setIngredients(await getDocuments<Ingredient>(Endpoints.ingredients));
   }
 
   function getIngredientValuesToAdd(): Ingredient {
@@ -69,23 +80,12 @@ export function Ingredients() {
     return cakes.some(cake => cake.ingredients!.some(ingredient => ingredient.id === ingredientId));
   }
 
-  function handleAddIngredientMenu(): void {
-    setShowAddIngredientMenu(!showAddIngredientMenu);
-    if (showAddIngredientMenu) {
-      const formElement = document.getElementById("ingredient-form");
-      formElement!.style.top = "20%";
-      console.log(formElement?.style.top);
-    }
-  }
-
   return (
     <div>
       <h1>Lista de Ingredientes</h1>
-      <p>Aqui você pode ver e adicionar novos ingredientes.</p>
 
-      {/* <Button label={showAddIngredientMenu ? "Fechar menu" : "Abrir menu"} onClick={handleAddIngredientMenu} /> */}
-      <Button label={showAddIngredientMenu ? "Fechar menu" : "Adicionar Ingrediente"} onClick={() => setShowAddIngredientMenu(!showAddIngredientMenu)} />
-      {showAddIngredientMenu && <IngredientForm handleOnClick={() => handleAddIngredient(getIngredientValuesToAdd())} />}
+      <Button label={showAddIngredientMenu ? "Fechar menu" : "Abrir menu"} onClick={() => setShowAddIngredientMenu(prev => !prev)} />
+      {<IngredientForm handleOnClick={() => handleAddIngredient(getIngredientValuesToAdd())} handleCloseMenu={() => setShowAddIngredientMenu(false)} />}
 
       {ingredients.length === 0 ? <p>Nenhum ingrediente encontrado.</p> : (
         <table>

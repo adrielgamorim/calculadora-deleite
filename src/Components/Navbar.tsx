@@ -1,7 +1,16 @@
 import { Link } from "react-router-dom";
 import { Button } from "@components/Button";
+import useAuth from "@auth/useAuth";
 
 export function Navbar() {
+  const { signOut } = useAuth();
+
+  function handleSignOut() {
+    if (confirm("Tem certeza que deseja sair?")) {
+      signOut();
+    }
+  }
+
   return (
     <nav>
       <Link to="/">
@@ -22,6 +31,8 @@ export function Navbar() {
       <Link to="/config">
         <Button label={ "Configurações" } />
       </Link>
+
+      <Button label={ "Sair" } onClick={handleSignOut} />
     </nav>
   );
 }

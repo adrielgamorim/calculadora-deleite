@@ -12,8 +12,10 @@ export default defineConfig({
   base: '/calculadora-deleite/',
   resolve: {
     alias: {
-      '@pages': path.resolve(__dirname, 'src/Pages'),
-      '@components': path.resolve(__dirname, 'src/Components'),
+      '@auth': path.resolve(__dirname, 'src/auth'),
+      '@assets': path.resolve(__dirname, 'src/assets'),
+      '@components': path.resolve(__dirname, 'src/components'),
+      '@pages': path.resolve(__dirname, 'src/pages'),
       '@models': path.resolve(__dirname, 'src/models'),
       '@helpers': path.resolve(__dirname, 'src/helpers'),
       '@requests': path.resolve(__dirname, 'src/requests'),
