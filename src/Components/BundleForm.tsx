@@ -1,5 +1,5 @@
 import { Button } from "@components/Button";
-import { Common } from "@data/Common";
+// import { Common } from "@data/Common";
 import Select, { type MultiValue } from 'react-select';
 
 type BundleFormProps = {
@@ -9,7 +9,7 @@ type BundleFormProps = {
     getIngredientOptionsForSelect: () => { label: string; value: string }[];
 };
 
-export function BundleForm({ handleOnClick, handleCloseMenu, handleOptionsChange, getIngredientOptionsForSelect }: BundleFormProps) {
+export function BundleForm({ handleOnClick, /* handleCloseMenu ,*/ handleOptionsChange, getIngredientOptionsForSelect }: BundleFormProps) {
     return (
 
         <form id="bundle-form">
