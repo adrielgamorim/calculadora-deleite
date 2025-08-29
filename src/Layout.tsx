@@ -11,7 +11,7 @@ export function Layout() {
   const { user, loading, signInWithGoogle, signOut } = useAuth();
 
   if (loading) {
-    return <div><Loading /></div>;
+    return <Loading />;
   }
 
   const whitelist: string[] = import.meta.env.VITE_WHITELIST.split(",");
