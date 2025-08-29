@@ -27,7 +27,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['vite.svg'],
+      includeAssets: ['logo.png'],
       manifest: {
         short_name: 'Calculadora Deleite',
         name: 'Calculadora Deleite',
@@ -37,7 +37,7 @@ export default defineConfig({
         background_color: '#000000',
         icons: [
           {
-            src: 'vite.svg', // Should be in public/
+            src: 'logo.png',
             sizes: 'any',
             type: 'image/svg+xml',
           }
