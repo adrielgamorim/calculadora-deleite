@@ -5,34 +5,36 @@ import useAuth from "@auth/useAuth";
 export function Navbar() {
   const { signOut } = useAuth();
 
-  function handleSignOut() {
-    if (confirm("Tem certeza que deseja sair?")) {
-      signOut();
-    }
-  }
-
   return (
     <nav>
-      <Link to="/">
-        <Button label={ "Home" } />
-      </Link>
+      {/* Dashboard with sub-pages */}
+      <div className="dropdown">
+        <Button label={"Dashboard"} />
+
+        <div className="dropdown-content">
+          <Link to="/">
+            <Button label={"Visão Geral"} />
+          </Link>
+          <Link to="/calculadora">
+            <Button label={"Calculadora"} />
+          </Link>
+        </div>
+      </div>
+
       <Link to="/ingredientes">
-        <Button label={ "Ingredientes" } />
+        <Button label={"Ingredientes"} />
       </Link>
       <Link to="/conjuntos">
-        <Button label={ "Conjuntos" } />
+        <Button label={"Conjuntos"} />
       </Link>
       <Link to="/bolos">
-        <Button label={ "Bolos" } />
-      </Link>
-      <Link to="/dashboard">
-        <Button label={ "Dashboard" } />
+        <Button label={"Bolos"} />
       </Link>
       <Link to="/config">
-        <Button label={ "Configurações" } />
+        <Button label={"Configurações"} />
       </Link>
 
-      <Button label={ "Sair" } onClick={handleSignOut} />
+      <Button label={"Sair"} onClick={() => signOut(true)} />
     </nav>
   );
 }

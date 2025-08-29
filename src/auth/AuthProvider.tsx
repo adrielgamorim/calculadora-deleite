@@ -21,8 +21,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await svcSignInWithGoogle();
   };
 
-  const signOut = async () => {
-    await svcLogout();
+  const signOut = async (confirm = false) => {
+    if (confirm) {
+      if (window.confirm("Tem certeza que deseja sair?")) {
+        await svcLogout();
+      }
+    } else {
+      await svcLogout();
+    }
   };
 
   const value: AuthContextShape = useMemo(

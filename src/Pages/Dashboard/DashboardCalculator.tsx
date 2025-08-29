@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
-import { getDocuments } from "@requests/requests";
-import { Endpoints } from "@data/Endpoints";
-import { Frames } from "@data/Frames";
 import type { Cake } from "@models/Cake";
 import type { Price } from "@models/Price";
 import type { Config as ConfigModel } from "@models/Config";
 import { slices } from "@data/slices";
+import { Frames } from "@data/Frames";
 import { helpers } from "@helpers/helpers";
+import { Endpoints } from "@data/Endpoints";
+import { useState, useEffect } from "react";
+import { Loading } from "@components/Loading";
+import { getDocuments } from "@requests/requests";
 
-export function Dashboard() {
+export function DashboardCalculator() {
   const [config, setConfig] = useState<ConfigModel | null>(null);
   const [cakes, setCakes] = useState<Cake[]>([]);
   const [prices, setPrices] = useState<Price[]>([]);
@@ -21,19 +22,19 @@ export function Dashboard() {
       const pricesArray: Price[] = [];
       cakes.forEach(cake => {
         const base = calculateBaseCakePrice(cake);
-        const baseWithPackaging = humanizePrice(calculatePriceWithPackaging(cake.frame, base));
+        const baseWithPackaging = helpers.humanizePrice(calculatePriceWithPackaging(cake.frame, base));
         const baseSlice = calculateCakeSlicePrice(cake.frame, base);
-        const baseSliceWithPackaging = humanizePrice(calculatePriceWithPackaging(cake.frame, baseSlice, true));
-        const converted = humanizePrice(calculateConvertedPrice(base));
-        const convertedWithPackaging = humanizePrice(calculateConvertedPrice(calculatePriceWithPackaging(cake.frame, base)));
-        const convertedSlice = humanizePrice(calculateConvertedPrice(baseSlice));
-        const convertedSliceWithPackaging = humanizePrice(calculateConvertedPrice(calculatePriceWithPackaging(cake.frame, baseSlice, true)));
+        const baseSliceWithPackaging = helpers.humanizePrice(calculatePriceWithPackaging(cake.frame, baseSlice, true));
+        const converted = helpers.humanizePrice(calculateConvertedPrice(base));
+        const convertedWithPackaging = helpers.humanizePrice(calculateConvertedPrice(calculatePriceWithPackaging(cake.frame, base)));
+        const convertedSlice = helpers.humanizePrice(calculateConvertedPrice(baseSlice));
+        const convertedSliceWithPackaging = helpers.humanizePrice(calculateConvertedPrice(calculatePriceWithPackaging(cake.frame, baseSlice, true)));
         pricesArray.push({
           id: cake.id!,
           name: cake.name,
-          base: humanizePrice(base),
+          base: helpers.humanizePrice(base),
           baseWithPackaging: baseWithPackaging,
-          baseSlice: humanizePrice(baseSlice),
+          baseSlice: helpers.humanizePrice(baseSlice),
           baseSliceWithPackaging: baseSliceWithPackaging,
           converted: converted,
           convertedWithPackaging: convertedWithPackaging,
@@ -119,7 +120,7 @@ export function Dashboard() {
         priceWithPackaging = price + config.frame35PackagingPrice;
         break;
       default:
-        alert("Tamanho do bolo inválido.");
+        alert("Tamanho de bolo inválido.");
         priceWithPackaging = price;
         break;
     }
@@ -134,7 +135,6 @@ export function Dashboard() {
   //   return price / (1 - (config!.ifoodTax / 100));
   // }
   
-
   function calculateCakeSlicePrice(frame: Frames, price: number): number {
     const sliceNumber = getCakeSliceNumber(frame);
     return price / sliceNumber;
@@ -144,19 +144,10 @@ export function Dashboard() {
     return slices[frame as keyof typeof slices];
   }
 
-  function humanizePrice(price: number): string {
-    price = helpers.ceilDecimal(price);
-    const parts = price.toString().split('.');
-    if (parts[1].length === 1) {
-      parts[1] += '0';
-    }
-    return parts.join(',');
-  }
-
   return (
     <div>
-      <h1>Dashboard</h1>
-      {prices.length === 0 ? <p>Nenhum bolo encontrado.</p> : (
+      <h1>Calculadora</h1>
+      {prices.length === 0 ? <Loading /> : (
         <table>
           <thead>
             <tr>

@@ -14,8 +14,8 @@ export function Layout() {
     return <div><Loading /></div>;
   }
 
-  const authorizedUsers: string[] = import.meta.env.VITE_AUTHORIZED_USERS.split(",");
-  const userIsAuthorized = user?.email ? authorizedUsers.includes(user.email) : false;
+  const whitelist: string[] = import.meta.env.VITE_WHITELIST.split(",");
+  const userIsAuthorized = user?.email ? whitelist.includes(user.email) : false;
 
   return (
     <>

@@ -8,6 +8,7 @@ import { Endpoints } from "@data/Endpoints";
 import { useEffect, useState } from "react";
 import { IngredientForm } from "@components/IngredientForm";
 import { getDocuments, addDocument, deleteDocument } from "@requests/requests";
+import '@styles/IngredientForm.css';
 
 export function Ingredients() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);

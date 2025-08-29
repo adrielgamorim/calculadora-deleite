@@ -5,7 +5,7 @@ export type AuthContextShape = {
   user: User | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
-  signOut: () => Promise<void>;
+  signOut: (confirm?: boolean) => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextShape | undefined>(undefined);
