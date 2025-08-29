@@ -1,0 +1,32 @@
+.actions {
+  position: relative;
+  display: inline-block;
+}
+
+.actions-menu {
+  display: none;
+  position: absolute;
+  right: -280%;
+  top: -30%;
+  background-color: #222;
+  box-shadow: 0px 8px 16px rgba(90, 88, 88, 0.2);
+  z-index: 1000;
+}
+
+.actions:hover .actions-menu {
+  display: flex;
+}
+
+.actions:hover span {
+  opacity: 0.6;
+}
+
+.actions-menu a {
+  text-decoration: none;
+  display: block;
+  opacity: 1;
+}
+
+.actions-menu a + a {
+  margin-top: 4px;
+}

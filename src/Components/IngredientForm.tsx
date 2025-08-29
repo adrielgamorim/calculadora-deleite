@@ -1,5 +1,5 @@
 import { Button } from "@components/Button";
-import { Common } from "@data/Common";
+import { SlClose } from "react-icons/sl";
 
 type IngredientFormProps = {
     handleOnClick: () => Promise<void>;
@@ -11,7 +11,7 @@ export function IngredientForm({ handleOnClick, handleCloseMenu }: IngredientFor
         <form id="ingredient-form">
             <div className="ingredient-form-header">
                 <h3 className="ingredient-form-title">Adicionar Ingrediente</h3>
-                <Button className="ingredient-form-close-button" label={Common.deleteButtonLabel} onClick={handleCloseMenu} />
+                <Button className="ingredient-form-close-button" label={<SlClose size={24} />} onClick={handleCloseMenu} />
             </div>
             <div className="ingredient-form-group ingredient-form-name">
                 <label htmlFor="ingredient-name">Nome do Ingrediente*: </label>

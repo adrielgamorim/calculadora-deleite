@@ -6,9 +6,10 @@ import { helpers } from "@helpers/helpers";
 import { Button } from "@components/Button";
 import { Endpoints } from "@data/Endpoints";
 import { useEffect, useState } from "react";
+import { Actions } from "@components/Actions";
 import { IngredientForm } from "@components/IngredientForm";
-import { getDocuments, addDocument, deleteDocument } from "@requests/requests";
-import '@styles/IngredientForm.css';
+import { getDocuments, addDocument, deleteDocument, updateDocument } from "@requests/requests";
+import "@styles/IngredientForm.css";
 
 export function Ingredients() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
@@ -53,6 +54,17 @@ export function Ingredients() {
       used_in_frame_25: helpers.parseDecimal((document.getElementById("ingredient-frame25") as HTMLInputElement)?.value) || 0,
       used_in_frame_35: helpers.parseDecimal((document.getElementById("ingredient-frame35") as HTMLInputElement)?.value) || 0,
     };
+  }
+
+  async function handleEditIngredient(id: string): Promise<void> {
+    const ingredientToEdit = ingredients.find(ingredient => ingredient.id === id);
+    const updatedIngredient = helpers.promptEditIngredient(ingredientToEdit!);
+    if (updatedIngredient === ingredientToEdit) {
+      return;
+    }
+
+    await updateDocument<Ingredient>(Endpoints.ingredients, id, updatedIngredient);
+    setIngredients(await getDocuments<Ingredient>(Endpoints.ingredients));
   }
 
   async function handleDelIngredient(id: string): Promise<void> {
@@ -112,7 +124,10 @@ export function Ingredients() {
                 <td>{ingredient.used_in_frame_15 || Common.noTableItemFoundContent}</td>
                 <td>{ingredient.used_in_frame_25 || Common.noTableItemFoundContent}</td>
                 <td>{ingredient.used_in_frame_35 || Common.noTableItemFoundContent}</td>
-                <td><Button label={Common.deleteButtonLabel} onClick={() => handleDelIngredient(ingredient.id!)} /></td>
+                <Actions
+                  handleEdit={() => handleEditIngredient(ingredient.id!)}
+                  handleDelete={() => handleDelIngredient(ingredient.id!)}
+                />
               </tr>
             ))}
           </tbody>
