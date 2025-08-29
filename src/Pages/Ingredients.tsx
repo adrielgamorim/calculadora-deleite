@@ -10,10 +10,13 @@ import { Actions } from "@components/Actions";
 import { IngredientForm } from "@components/IngredientForm";
 import { getDocuments, addDocument, deleteDocument, updateDocument } from "@requests/requests";
 import "@styles/IngredientForm.css";
+import "@styles/Table.css";
 
 export function Ingredients() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [showAddIngredientMenu, setShowAddIngredientMenu] = useState(false);
+  const [sortColumn, setSortColumn] = useState<keyof Ingredient | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -83,6 +86,22 @@ export function Ingredients() {
     }
   }
 
+  function handleSort(column: keyof Ingredient) {
+    let direction: "asc" | "desc" = "asc";
+    if (sortColumn === column) {
+      direction = sortDirection === "asc" ? "desc" : "asc";
+    }
+    setSortColumn(column);
+    setSortDirection(direction);
+
+    const sortedIngredients = [...ingredients].sort((a, b) => {
+      if (a[column]! < b[column]!) return direction === "asc" ? -1 : 1;
+      if (a[column]! > b[column]!) return direction === "asc" ? 1 : -1;
+      return 0;
+    });
+    setIngredients(sortedIngredients);
+  }
+
   async function checkIngredientIsUsedInBundles(ingredientId: string): Promise<boolean> {
     const bundles = await getDocuments<Bundle>(Endpoints.bundles);
     return bundles.some(bundle => bundle.ingredients.some(ingredient => ingredient.id === ingredientId));
@@ -94,24 +113,39 @@ export function Ingredients() {
   }
 
   return (
-    <div>
+
+    <div onClick={(e) => { if (e.target === e.currentTarget) setShowAddIngredientMenu(false); }}>
       <h1>Lista de Ingredientes</h1>
 
       <Button label={showAddIngredientMenu ? "Fechar menu" : "Abrir menu"} onClick={() => setShowAddIngredientMenu(prev => !prev)} />
-      {<IngredientForm handleOnClick={() => handleAddIngredient(getIngredientValuesToAdd())} handleCloseMenu={() => setShowAddIngredientMenu(false)} />}
+      {<IngredientForm handleSubmit={() => handleAddIngredient(getIngredientValuesToAdd())} handleCloseMenu={() => setShowAddIngredientMenu(false)} />}
 
       {ingredients.length === 0 ? <p>Nenhum ingrediente encontrado.</p> : (
         <table>
           <thead>
             <tr>
-              <th>Nome</th>
-              <th>Preço</th>
-              <th>Quantidade</th>
-              <th>Unidade</th>
-              <th>Qnt usada no aro 15</th>
-              <th>Qnt usada no aro 25</th>
-              <th>Qnt usada no aro 35</th>
-              <th>Ações</th>
+              <th onClick={() => handleSort("name")}>
+                Nome {sortColumn === "name" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+              </th>
+              <th onClick={() => handleSort("price")}>
+                Preço {sortColumn === "price" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+              </th>
+              <th onClick={() => handleSort("quantity")}>
+                Quantidade {sortColumn === "quantity" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+              </th>
+              <th onClick={() => handleSort("unit")}>
+                Unidade {sortColumn === "unit" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+              </th>
+              <th onClick={() => handleSort("used_in_frame_15")}>
+                Qnt usada no aro 15 {sortColumn === "used_in_frame_15" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+              </th>
+              <th onClick={() => handleSort("used_in_frame_25")}>
+                Qnt usada no aro 25 {sortColumn === "used_in_frame_25" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+              </th>
+              <th onClick={() => handleSort("used_in_frame_35")}>
+                Qnt usada no aro 35 {sortColumn === "used_in_frame_35" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+              </th>
+              <th className="static">Ações</th>
             </tr>
           </thead>
           <tbody>

@@ -1,0 +1,28 @@
+tr {
+  user-select: none;
+}
+
+th {
+  cursor: pointer;
+  border-radius: .5rem;
+}
+
+th.static {
+  cursor: default;
+}
+
+th:hover {
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+th:hover.static {
+  box-shadow: none;
+}
+
+th:active {
+  box-shadow: inset 0 0 5px rgba(255, 255, 255, 0.2);
+}
+
+th:active.static {
+  box-shadow: none;
+}

@@ -2,11 +2,11 @@ import { Button } from "@components/Button";
 import { SlClose } from "react-icons/sl";
 
 type IngredientFormProps = {
-    handleOnClick: () => Promise<void>;
+    handleSubmit: () => Promise<void>;
     handleCloseMenu: () => void;
 };
 
-export function IngredientForm({ handleOnClick, handleCloseMenu }: IngredientFormProps) {
+export function IngredientForm({ handleSubmit, handleCloseMenu }: IngredientFormProps) {
     return (
         <form id="ingredient-form">
             <div className="ingredient-form-header">
@@ -48,7 +48,7 @@ export function IngredientForm({ handleOnClick, handleCloseMenu }: IngredientFor
                 <label htmlFor="ingredient-frame35">Qnt usada no aro 35: </label>
                 <input id="ingredient-frame35" type="number" />
             </div>
-            <Button label="Adicionar Ingrediente" onClick={handleOnClick} />
+            <Button label="Adicionar Ingrediente" onClick={handleSubmit} />
         </form>
     );
 }
