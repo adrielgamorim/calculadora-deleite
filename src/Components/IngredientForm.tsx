@@ -1,7 +1,7 @@
 import "@styles/AddItemForm.css";
 import { SlClose } from "react-icons/sl";
 import { Button } from "@components/Button";
-import { IoMdInformationCircleOutline } from "react-icons/io";
+import { InformationSpan } from "@components/InformationSpan";
 
 type IngredientFormProps = {
     handleSubmit: () => Promise<void>;
@@ -9,6 +9,8 @@ type IngredientFormProps = {
 };
 
 export function IngredientForm({ handleSubmit, handleCloseMenu }: IngredientFormProps) {
+    const frameInformationMessage = "Informe a quantidade do ingrediente que é utilizada em um bolo de aro {0} (em gramas, ml, ou unidades).";
+
     return (
         <form id="form">
             <div className="form-header">
@@ -40,19 +42,19 @@ export function IngredientForm({ handleSubmit, handleCloseMenu }: IngredientForm
             </div>
             <div className="form-group ingredient-form-frame15">
                 <label htmlFor="ingredient-frame15">Aro 15:
-                    <span title="Informe a quantidade de ingrediente utilizada em um bolo de aro 15"> <IoMdInformationCircleOutline /> </span>
+                    <InformationSpan message={frameInformationMessage.format(15)} />
                 </label>
                 <input id="ingredient-frame15" type="number" />
             </div>
             <div className="form-group ingredient-form-frame25">
                 <label htmlFor="ingredient-frame25">Aro 25:
-                    <span title="Informe a quantidade de ingrediente utilizada em um bolo de aro 25"> <IoMdInformationCircleOutline /> </span>
+                    <InformationSpan message={frameInformationMessage.format(25)} />
                 </label>
                 <input id="ingredient-frame25" type="number"  />
             </div>
             <div className="form-group ingredient-form-frame35">
                 <label htmlFor="ingredient-frame35">Aro 35:
-                    <span title="Informe a quantidade de ingrediente utilizada em um bolo de aro 35"> <IoMdInformationCircleOutline /> </span>
+                    <InformationSpan message={frameInformationMessage.format(35)} />
                 </label>
                 <input id="ingredient-frame35" type="number" />
             </div>

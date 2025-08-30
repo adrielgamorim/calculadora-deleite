@@ -9,7 +9,7 @@ import { Endpoints } from "@data/Endpoints";
 import { useEffect, useState } from "react";
 import { CakeForm } from "@components/CakeForm";
 import { useItemForm } from "@helpers/useItemForm";
-import { RiMenuUnfold3Line } from "react-icons/ri";
+import { RiDeleteBin2Line, RiMenuUnfold3Line } from "react-icons/ri";
 import { useColumnSort } from "@helpers/useColumnSort";
 import { getDocuments, addDocument, deleteDocument } from "@requests/requests";
 
@@ -68,6 +68,19 @@ export function Cakes() {
     }
   }
 
+  function getFrameName(frame: Frames): string {
+    switch (frame) {
+      case Frames.frame15:
+        return "15cm";
+      case Frames.frame25:
+        return "25cm";
+      case Frames.frame35:
+        return "35cm";
+      default:
+        return "Desconhecido";
+    }
+  }
+
   function getIngredientOptionsForSelect(): { value: string; label: string }[] {
     return ingredients.map(ingredient => ({ value: ingredient.id!, label: ingredient.name }));
   }
@@ -107,6 +120,9 @@ export function Cakes() {
               <th onClick={() => handleSort("name")}>
                 Nome {sortColumn === "name" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
               </th>
+              <th onClick={() => handleSort("frame")}>
+                Tamanho {sortColumn === "frame" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
+              </th>
               <th className="static">Conjuntos</th>
               <th className="static">Ingredientes</th>
               <th className="static">Ações</th>
@@ -116,6 +132,7 @@ export function Cakes() {
             {data.map(cake => (
               <tr key={cake.id}>
                 <td>{cake.name}</td>
+                <td>{getFrameName(cake.frame)}</td>
                 <td>
                   {cake.bundles!.length > 0 ? cake.bundles!.map(bundle => (
                     <span key={bundle.id}>
@@ -136,7 +153,7 @@ export function Cakes() {
                     Common.noTableItemFoundContent
                   )}
                 </td>
-                <td><Button label={Common.deleteButtonLabel} onClick={() => handleDelCake(cake.id!)} /></td>
+                <td><Button label={<RiDeleteBin2Line color="red" />} onClick={() => handleDelCake(cake.id!)} /></td>
               </tr>
             ))}
           </tbody>

@@ -79,7 +79,8 @@ export function DashboardCalculator() {
       }
 
       if (unit === "un") {
-        return total + ingredient.price * usedInFrame;
+        const singleUnitPrice = ingredient.price / quantity;
+        return total + singleUnitPrice * usedInFrame;
       }
 
       if (unit === "kg" || unit === "ml") {

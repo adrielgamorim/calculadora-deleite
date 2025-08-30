@@ -13,11 +13,13 @@ import { useColumnSort } from "@helpers/useColumnSort";
 import { IngredientForm } from "@components/IngredientForm";
 import { getDocuments, addDocument, deleteDocument, updateDocument } from "@requests/requests";
 import { RiMenuUnfold3Line } from "react-icons/ri";
+import { InformationSpan } from "@components/InformationSpan";
 
 export function Ingredients() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const {showAddItemMenu, setShowAddItemMenu} = useItemForm(false);
   const {data, sortColumn, sortDirection, handleSort} = useColumnSort<Ingredient>(ingredients);
+  const frameInformationMessage = "Quantidade do ingrediente usada neste aro (em gramas, ml ou unidades)";
 
   useEffect(() => {
     Promise.resolve(
@@ -116,13 +118,19 @@ export function Ingredients() {
                 Unidade {sortColumn === "unit" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
               </th>
               <th onClick={() => handleSort("used_in_frame_15")}>
-                Qnt usada no aro 15 {sortColumn === "used_in_frame_15" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
+                Aro 15
+                <InformationSpan message={frameInformationMessage} />
+                {sortColumn === "used_in_frame_15" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
               </th>
               <th onClick={() => handleSort("used_in_frame_25")}>
-                Qnt usada no aro 25 {sortColumn === "used_in_frame_25" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
+                Aro 25
+                <InformationSpan message={frameInformationMessage} />
+                {sortColumn === "used_in_frame_25" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
               </th>
               <th onClick={() => handleSort("used_in_frame_35")}>
-                Qnt usada no aro 35 {sortColumn === "used_in_frame_35" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
+                Aro 35
+                <InformationSpan message={frameInformationMessage} />
+                {sortColumn === "used_in_frame_35" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
               </th>
               <th className="static">Ações</th>
             </tr>

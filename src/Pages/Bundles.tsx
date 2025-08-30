@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { Endpoints } from "@data/Endpoints";
 import { Button } from "@components/Button";
 import { useItemForm } from "@helpers/useItemForm";
-import { RiMenuUnfold3Line } from "react-icons/ri";
+import { RiDeleteBin2Line, RiMenuUnfold3Line } from "react-icons/ri";
 import { BundleForm } from "@components/BundleForm";
 import { useColumnSort } from "@helpers/useColumnSort";
 import { getDocuments, addDocument, deleteDocument } from "@requests/requests";
@@ -101,7 +101,7 @@ export function Bundles() {
                     </span>
                   ))}
                 </td>
-                <td><Button label={Common.deleteButtonLabel} onClick={() => handleDelBundle(bundle.id!)} /></td>
+                <td><Button label={<RiDeleteBin2Line color="red" />} onClick={() => handleDelBundle(bundle.id!)} /></td>
               </tr>
             ))}
           </tbody>
