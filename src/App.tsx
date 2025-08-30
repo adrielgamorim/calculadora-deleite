@@ -1,17 +1,16 @@
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
-import Layout from './Layout';
-import { Ingredients } from '@pages/Ingredients';
-import { Bundles } from '@pages/Bundles';
-import { Cakes } from '@pages/Cakes';
-import { Dashboard } from '@pages/Dashboard/Dashboard';
-import { DashboardOverview } from '@pages/Dashboard/DashboardOverview';
-import { DashboardCalculator } from '@pages/Dashboard/DashboardCalculator';
-import { Config } from '@pages/Config';
 import '@styles/App.css';
 import '@styles/DashboardDropdown.css';
+import Layout from './Layout';
+import { Cakes } from '@pages/Cakes';
+import { Config } from '@pages/Config';
+import { Bundles } from '@pages/Bundles';
+import { Ingredients } from '@pages/Ingredients';
+import { Dashboard } from '@pages/Dashboard/Dashboard';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import { DashboardOverview } from '@pages/Dashboard/DashboardOverview';
+import { DashboardCalculator } from '@pages/Dashboard/DashboardCalculator';
 
 function App() {
-
   return (
     <Router>
       <Routes>

@@ -37,7 +37,7 @@ body {
 
 h1 {
   font-size: 3rem;
-  line-height: 1.1;
+  line-height: 1;
 }
 
 button {
@@ -56,6 +56,24 @@ button:hover {
 }
 button:focus,
 button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+/* For WebKit browsers (Chrome, Safari, Edge, Opera) */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* For Mozilla Firefox */
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.active {
+  background-color: #646cff;
   outline: 4px auto -webkit-focus-ring-color;
 }
 

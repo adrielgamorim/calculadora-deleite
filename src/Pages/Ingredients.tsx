@@ -1,3 +1,4 @@
+import "@styles/Table.css";
 import type { Cake } from "@models/Cake";
 import type { Bundle } from "@models/Bundle";
 import type { Ingredient } from "@models/Ingredient";
@@ -7,15 +8,15 @@ import { Button } from "@components/Button";
 import { Endpoints } from "@data/Endpoints";
 import { useEffect, useState } from "react";
 import { Actions } from "@components/Actions";
+import { useItemForm } from "@helpers/useItemForm";
 import { useColumnSort } from "@helpers/useColumnSort";
 import { IngredientForm } from "@components/IngredientForm";
 import { getDocuments, addDocument, deleteDocument, updateDocument } from "@requests/requests";
-import "@styles/IngredientForm.css";
-import "@styles/Table.css";
+import { RiMenuUnfold3Line } from "react-icons/ri";
 
 export function Ingredients() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [showAddIngredientMenu, setShowAddIngredientMenu] = useState(false);
+  const {showAddItemMenu, setShowAddItemMenu} = useItemForm(false);
   const {data, sortColumn, sortDirection, handleSort} = useColumnSort<Ingredient>(ingredients);
 
   useEffect(() => {
@@ -23,13 +24,6 @@ export function Ingredients() {
       getDocuments<Ingredient>(Endpoints.ingredients)
     ).then(data => setIngredients(data));
   }, []);
-
-  useEffect(() => {
-    const formElement = document.getElementById("ingredient-form");
-    if (formElement) {
-      formElement.style.top = showAddIngredientMenu ? "20vh" : "-100vh";
-    }
-  }, [showAddIngredientMenu]);
 
   async function handleAddIngredient(ingredient: Ingredient): Promise<void> {
     if (!ingredient.name || !ingredient.price || !ingredient.quantity || !ingredient.unit) {
@@ -41,8 +35,8 @@ export function Ingredients() {
       return;
     }
     await addDocument<Ingredient>(Endpoints.ingredients, ingredient);
-    (document.getElementById("ingredient-form") as HTMLFormElement)?.reset();
-    setShowAddIngredientMenu(false);
+    (document.getElementById("form") as HTMLFormElement)?.reset();
+    setShowAddItemMenu(false);
     setIngredients(await getDocuments<Ingredient>(Endpoints.ingredients));
   }
 
@@ -59,6 +53,9 @@ export function Ingredients() {
   }
 
   async function handleEditIngredient(id: string): Promise<void> {
+    // Alert about beta feature
+    alert("ATENÇÃO: NÃO É RECOMENDADO EDITAR INGREDIENTES ATUALMENTE.");
+
     const ingredientToEdit = ingredients.find(ingredient => ingredient.id === id);
     const updatedIngredient = helpers.promptEditIngredient(ingredientToEdit!);
     if (updatedIngredient === ingredientToEdit) {
@@ -96,11 +93,11 @@ export function Ingredients() {
   }
 
   return (
-    <div onClick={(e) => { if (e.target === e.currentTarget) setShowAddIngredientMenu(false); }}>
-      <h1>Lista de Ingredientes</h1>
+    <div onClick={(e) => { if (e.target === e.currentTarget) setShowAddItemMenu(false); }}>
+      <h1>Ingredientes</h1>
 
-      <Button label={showAddIngredientMenu ? "Fechar menu" : "Abrir menu"} onClick={() => setShowAddIngredientMenu(prev => !prev)} />
-      {<IngredientForm handleSubmit={() => handleAddIngredient(getIngredientValuesToAdd())} handleCloseMenu={() => setShowAddIngredientMenu(false)} />}
+      <Button label={showAddItemMenu ? "Fechar menu" : "Adicionar Ingrediente"} icon={!showAddItemMenu && <RiMenuUnfold3Line size={20} />} onClick={() => setShowAddItemMenu(prev => !prev)} />
+      {<IngredientForm handleSubmit={() => handleAddIngredient(getIngredientValuesToAdd())} handleCloseMenu={() => setShowAddItemMenu(false)} />}
 
       {ingredients.length === 0 ? <p>Nenhum ingrediente encontrado.</p> : (
         <table>

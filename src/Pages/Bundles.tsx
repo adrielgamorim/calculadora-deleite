@@ -1,20 +1,23 @@
+import "@styles/Table.css";
 import type { Bundle } from "@models/Bundle";
 import type { MultiValue } from 'react-select';
 import type { Ingredient } from "@models/Ingredient";
 import { Common } from "@data/Common";
-import { useEffect, useState } from "react";  
+import { useEffect, useState } from "react";
 import { Endpoints } from "@data/Endpoints";
 import { Button } from "@components/Button";
+import { useItemForm } from "@helpers/useItemForm";
+import { RiMenuUnfold3Line } from "react-icons/ri";
 import { BundleForm } from "@components/BundleForm";
 import { useColumnSort } from "@helpers/useColumnSort";
 import { getDocuments, addDocument, deleteDocument } from "@requests/requests";
-import "@styles/Table.css"; 
 
 export function Bundles() {
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const { showAddItemMenu, setShowAddItemMenu } = useItemForm(false);
   const [selectedIngredients, setSelectedIngredients] = useState<Ingredient[]>([]);
-  const {data, sortColumn, sortDirection, handleSort} = useColumnSort<Bundle>(bundles);
+  const { data, sortColumn, sortDirection, handleSort } = useColumnSort<Bundle>(bundles);
 
   useEffect(() => {
     Promise.all([
@@ -64,11 +67,16 @@ export function Bundles() {
   }
 
   return (
-    <div>
-      <h1>Lista de Conjuntos</h1>
-      <p>Aqui você pode ver e adicionar novos conjuntos.</p>
+    <div onClick={(e) => { if (e.target === e.currentTarget) setShowAddItemMenu(false); }}>
+      <h1>Conjuntos</h1>
 
-        {<BundleForm handleOnClick={() => handleAddBundle(getBundleToAdd())} handleCloseMenu={() => {/*setShowAddIngredientMenu(false)*/}} handleOptionsChange={handleOptionsChange} getIngredientOptionsForSelect={getIngredientOptionsForSelect} />}
+      <Button label={showAddItemMenu ? "Fechar menu" : "Adicionar Conjunto"} icon={!showAddItemMenu && <RiMenuUnfold3Line size={20} />} onClick={() => setShowAddItemMenu(prev => !prev)} />
+      {<BundleForm
+        handleSubmit={() => handleAddBundle(getBundleToAdd())}
+        handleCloseMenu={() => setShowAddItemMenu(false)}
+        handleOptionsChange={handleOptionsChange}
+        getIngredientOptionsForSelect={getIngredientOptionsForSelect}
+      />}
 
       {bundles.length === 0 ? <p>Nenhum Conjunto encontrado.</p> : (
         <table>

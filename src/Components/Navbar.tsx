@@ -1,37 +1,60 @@
-import { Link } from "react-router-dom";
-import { Button } from "@components/Button";
 import useAuth from "@auth/useAuth";
+import { Button } from "@components/Button";
+import { Link, useLocation } from "react-router-dom";
 
 export function Navbar() {
   const { signOut } = useAuth();
+  const location = useLocation();
 
   return (
     <nav>
       {/* Dashboard with sub-pages */}
       <div className="dropdown">
-        <Button label={"Dashboard"} />
+        <Button
+          label={"Dashboard"}
+          className={location.pathname === "/" || location.pathname === "/calculadora" ? "active" : ""}
+        />
 
         <div className="dropdown-content">
           <Link to="/">
-            <Button label={"Visão Geral"} />
+            <Button
+              label={"Visão Geral"}
+              className={location.pathname === "/" ? "active" : ""}
+            />
           </Link>
           <Link to="/calculadora">
-            <Button label={"Calculadora"} />
+            <Button
+              label={"Calculadora"}
+              className={location.pathname === "/calculadora" ? "active" : ""}
+            />
           </Link>
         </div>
       </div>
 
+      {/* Other Pages */}
       <Link to="/ingredientes">
-        <Button label={"Ingredientes"} />
+        <Button
+          label={"Ingredientes"}
+          className={location.pathname === "/ingredientes" ? "active" : ""}
+        />
       </Link>
       <Link to="/conjuntos">
-        <Button label={"Conjuntos"} />
+        <Button
+          label={"Conjuntos"}
+          className={location.pathname === "/conjuntos" ? "active" : ""}
+        />
       </Link>
       <Link to="/bolos">
-        <Button label={"Bolos"} />
+        <Button
+          label={"Bolos"}
+          className={location.pathname === "/bolos" ? "active" : ""}
+        />
       </Link>
       <Link to="/config">
-        <Button label={"Configurações"} />
+        <Button
+          label={"Configurações"}
+          className={location.pathname === "/config" ? "active" : ""}
+        />
       </Link>
 
       <Button label={"Sair"} onClick={() => signOut(true)} />

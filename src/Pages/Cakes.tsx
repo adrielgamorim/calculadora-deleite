@@ -2,22 +2,25 @@ import type { Cake } from "@models/Cake";
 import type { Bundle } from "@models/Bundle";
 import type { MultiValue } from 'react-select';
 import type { Ingredient } from "@models/Ingredient";
-import Select from 'react-select'
 import { Common } from "@data/Common";
 import { Frames } from "@data/Frames";
 import { Button } from "@components/Button";
 import { Endpoints } from "@data/Endpoints";
 import { useEffect, useState } from "react";
+import { CakeForm } from "@components/CakeForm";
+import { useItemForm } from "@helpers/useItemForm";
+import { RiMenuUnfold3Line } from "react-icons/ri";
 import { useColumnSort } from "@helpers/useColumnSort";
 import { getDocuments, addDocument, deleteDocument } from "@requests/requests";
 
 export function Cakes() {
   const [cakes, setCakes] = useState<Cake[]>([]);
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [bundles, setBundles] = useState<Bundle[]>([]);
-  const [selectedIngredients, setSelectedIngredients] = useState<Ingredient[]>([]);
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [selectedBundles, setSelectedBundles] = useState<Bundle[]>([]);
-  const {data, sortColumn, sortDirection, handleSort} = useColumnSort<Cake>(cakes);
+  const [selectedIngredients, setSelectedIngredients] = useState<Ingredient[]>([]);
+  const { showAddItemMenu, setShowAddItemMenu } = useItemForm(false);
+  const { data, sortColumn, sortDirection, handleSort } = useColumnSort<Cake>(cakes);
 
   useEffect(() => {
     Promise.all([
@@ -84,22 +87,18 @@ export function Cakes() {
   }
 
   return (
-    <div>
-      <h1>Lista de Bolos</h1>
-      <p>Aqui você pode ver e adicionar novos bolos.</p>
+    <div onClick={(e) => { if (e.target === e.currentTarget) setShowAddItemMenu(false); }}>
+      <h1>Bolos</h1>
 
-      <form id="cake-form">
-        <input id="cake-name" type="text" placeholder="Nome do Bolo*" />
-        <select id="cake-frame" defaultValue="">
-          <option value="" disabled>Selecione o tamanho do Bolo*</option>
-          <option value={Frames.frame15}>Bolo 15cm</option>
-          <option value={Frames.frame25}>Bolo 25cm</option>
-          <option value={Frames.frame35}>Bolo 35cm</option>
-        </select>
-        <Select options={getIngredientOptionsForSelect()} onChange={handleIngredientOptionsChange} isMulti id="cake-ingredients" placeholder="Selecione os Ingredientes*" />
-        <Select options={getBundleOptionsForSelect()} onChange={handleBundleOptionsChange} isMulti id="cake-bundles" placeholder="Selecione os Conjuntos*" />
-        <Button label="Adicionar Bolo" onClick={() => handleAddCake(getCakeToAdd())} />
-      </form>
+      <Button label={showAddItemMenu ? "Fechar menu" : "Adicionar Bolo"} icon={!showAddItemMenu && <RiMenuUnfold3Line size={20} />} onClick={() => setShowAddItemMenu(prev => !prev)} />
+      {<CakeForm
+        handleSubmit={() => handleAddCake(getCakeToAdd())}
+        handleCloseMenu={() => setShowAddItemMenu(false)}
+        handleIngredientOptionsChange={handleIngredientOptionsChange}
+        getIngredientOptionsForSelect={getIngredientOptionsForSelect}
+        getBundleOptionsForSelect={getBundleOptionsForSelect}
+        handleBundleOptionsChange={handleBundleOptionsChange}
+      />}
 
       {cakes.length === 0 ? <p>Nenhum Bolo encontrado.</p> : (
         <table>

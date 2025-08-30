@@ -1,5 +1,5 @@
-#ingredient-form {
-  width: 30%;
+#form {
+  width: 20%;
   background-color: #212121;
   padding: 1rem;
   border-radius: 1rem;
@@ -14,23 +14,23 @@
   z-index: 99;
 }
 
-.ingredient-form-header {
+.form-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.ingredient-form-title {
+.form-title {
   margin: 0 auto;
 }
 
-#ingredient-form .ingredient-form-close-button {
+#form .form-close-button {
   background-color: transparent;
   margin: 0;
   padding: 0;
 }
 
-.ingredient-form-group {
+.form-group {
   display: flex;
   justify-content: space-between;
 }

@@ -1,11 +1,10 @@
-import { Button } from "@components/Button";
-import { Navbar } from "@components/Navbar";
-import { Outlet } from "react-router-dom";
 import useAuth from "@auth/useAuth";
-import { SignInWithGoogleButton } from "@components/SignInWithGoogleButton";
-import { Loading } from "@components/Loading";
+import { Outlet } from "react-router-dom";
+import { Button } from "@components/Button";
 import { Footer } from "@components/Footer";
-
+import { Navbar } from "@components/Navbar";
+import { Loading } from "@components/Loading";
+import { SignInWithGoogleButton } from "@components/SignInWithGoogleButton";
 
 export function Layout() {
   const { user, loading, signInWithGoogle, signOut } = useAuth();
