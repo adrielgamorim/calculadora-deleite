@@ -7,6 +7,7 @@ import { Button } from "@components/Button";
 import { Endpoints } from "@data/Endpoints";
 import { useEffect, useState } from "react";
 import { Actions } from "@components/Actions";
+import { useColumnSort } from "@helpers/useColumnSort";
 import { IngredientForm } from "@components/IngredientForm";
 import { getDocuments, addDocument, deleteDocument, updateDocument } from "@requests/requests";
 import "@styles/IngredientForm.css";
@@ -15,14 +16,12 @@ import "@styles/Table.css";
 export function Ingredients() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [showAddIngredientMenu, setShowAddIngredientMenu] = useState(false);
-  const [sortColumn, setSortColumn] = useState<keyof Ingredient | null>(null);
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const {data, sortColumn, sortDirection, handleSort} = useColumnSort<Ingredient>(ingredients);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIngredients(await getDocuments<Ingredient>(Endpoints.ingredients));
-    };
-    fetchData();
+    Promise.resolve(
+      getDocuments<Ingredient>(Endpoints.ingredients)
+    ).then(data => setIngredients(data));
   }, []);
 
   useEffect(() => {
@@ -86,22 +85,6 @@ export function Ingredients() {
     }
   }
 
-  function handleSort(column: keyof Ingredient) {
-    let direction: "asc" | "desc" = "asc";
-    if (sortColumn === column) {
-      direction = sortDirection === "asc" ? "desc" : "asc";
-    }
-    setSortColumn(column);
-    setSortDirection(direction);
-
-    const sortedIngredients = [...ingredients].sort((a, b) => {
-      if (a[column]! < b[column]!) return direction === "asc" ? -1 : 1;
-      if (a[column]! > b[column]!) return direction === "asc" ? 1 : -1;
-      return 0;
-    });
-    setIngredients(sortedIngredients);
-  }
-
   async function checkIngredientIsUsedInBundles(ingredientId: string): Promise<boolean> {
     const bundles = await getDocuments<Bundle>(Endpoints.bundles);
     return bundles.some(bundle => bundle.ingredients.some(ingredient => ingredient.id === ingredientId));
@@ -113,7 +96,6 @@ export function Ingredients() {
   }
 
   return (
-
     <div onClick={(e) => { if (e.target === e.currentTarget) setShowAddIngredientMenu(false); }}>
       <h1>Lista de Ingredientes</h1>
 
@@ -125,31 +107,31 @@ export function Ingredients() {
           <thead>
             <tr>
               <th onClick={() => handleSort("name")}>
-                Nome {sortColumn === "name" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+                Nome {sortColumn === "name" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
               </th>
               <th onClick={() => handleSort("price")}>
-                Preço {sortColumn === "price" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+                Preço {sortColumn === "price" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
               </th>
               <th onClick={() => handleSort("quantity")}>
-                Quantidade {sortColumn === "quantity" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+                Quantidade {sortColumn === "quantity" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
               </th>
               <th onClick={() => handleSort("unit")}>
-                Unidade {sortColumn === "unit" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+                Unidade {sortColumn === "unit" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
               </th>
               <th onClick={() => handleSort("used_in_frame_15")}>
-                Qnt usada no aro 15 {sortColumn === "used_in_frame_15" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+                Qnt usada no aro 15 {sortColumn === "used_in_frame_15" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
               </th>
               <th onClick={() => handleSort("used_in_frame_25")}>
-                Qnt usada no aro 25 {sortColumn === "used_in_frame_25" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+                Qnt usada no aro 25 {sortColumn === "used_in_frame_25" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
               </th>
               <th onClick={() => handleSort("used_in_frame_35")}>
-                Qnt usada no aro 35 {sortColumn === "used_in_frame_35" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+                Qnt usada no aro 35 {sortColumn === "used_in_frame_35" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
               </th>
               <th className="static">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {ingredients.map(ingredient => (
+            {data.map(ingredient => (
               <tr key={ingredient.id}>
                 <td>{ingredient.name}</td>
                 <td>{ingredient.price}</td>

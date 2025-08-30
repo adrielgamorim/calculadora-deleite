@@ -12,6 +12,7 @@ export const helpers = {
   humanizePrice(price: number): string {
     price = this.ceilDecimal(price);
     const parts = price.toString().split('.');
+    if (!parts[1]) return parts[0] + ',00';
     if (parts[1].length === 1) {
       parts[1] += '0';
     }

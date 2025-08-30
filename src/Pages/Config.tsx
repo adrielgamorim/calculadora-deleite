@@ -16,10 +16,9 @@ export function Config() {
   });
 
   useEffect(() => {
-    const fetchConfig = async () => {
-      setConfig(await getDocuments<ConfigModel>(Endpoints.config).then(data => data[0] || ((c: ConfigModel) => c)));
-    };
-    fetchConfig();
+    Promise.resolve(
+      getDocuments<ConfigModel>(Endpoints.config)
+    ).then(data => setConfig(data[0] || ((c: ConfigModel) => c)));
   }, []);
 
   async function getNewConfigValues(): Promise<ConfigModel> {

@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
-import Select from 'react-select'
-import type { Ingredient } from "@models/Ingredient";
+import type { Cake } from "@models/Cake";
 import type { Bundle } from "@models/Bundle";
 import type { MultiValue } from 'react-select';
-import type { Cake } from "@models/Cake";
-import { Frames } from "@data/Frames";
-import { getDocuments, addDocument, deleteDocument } from "@requests/requests";
-import { Endpoints } from "@data/Endpoints";
-import { Button } from "@components/Button";
+import type { Ingredient } from "@models/Ingredient";
+import Select from 'react-select'
 import { Common } from "@data/Common";
+import { Frames } from "@data/Frames";
+import { Button } from "@components/Button";
+import { Endpoints } from "@data/Endpoints";
+import { useEffect, useState } from "react";
+import { useColumnSort } from "@helpers/useColumnSort";
+import { getDocuments, addDocument, deleteDocument } from "@requests/requests";
 
 export function Cakes() {
   const [cakes, setCakes] = useState<Cake[]>([]);
@@ -16,14 +17,18 @@ export function Cakes() {
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [selectedIngredients, setSelectedIngredients] = useState<Ingredient[]>([]);
   const [selectedBundles, setSelectedBundles] = useState<Bundle[]>([]);
+  const {data, sortColumn, sortDirection, handleSort} = useColumnSort<Cake>(cakes);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setCakes(await getDocuments<Cake>(Endpoints.cakes));
-      setIngredients(await getDocuments<Ingredient>(Endpoints.ingredients));
-      setBundles(await getDocuments<Bundle>(Endpoints.bundles));
-    };
-    fetchData();
+    Promise.all([
+      getDocuments<Cake>(Endpoints.cakes),
+      getDocuments<Ingredient>(Endpoints.ingredients),
+      getDocuments<Bundle>(Endpoints.bundles)
+    ]).then(([cakesData, ingredientsData, bundlesData]) => {
+      setCakes(cakesData);
+      setIngredients(ingredientsData);
+      setBundles(bundlesData);
+    });
   }, []);
 
   async function handleAddCake(cake: Cake): Promise<void> {
@@ -100,14 +105,16 @@ export function Cakes() {
         <table>
           <thead>
             <tr>
-              <th>Nome</th>
-              <th>Conjuntos</th>
-              <th>Ingredientes</th>
-              <th>Ações</th>
+              <th onClick={() => handleSort("name")}>
+                Nome {sortColumn === "name" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
+              </th>
+              <th className="static">Conjuntos</th>
+              <th className="static">Ingredientes</th>
+              <th className="static">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {cakes.map(cake => (
+            {data.map(cake => (
               <tr key={cake.id}>
                 <td>{cake.name}</td>
                 <td>

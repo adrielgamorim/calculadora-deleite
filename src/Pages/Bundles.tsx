@@ -1,24 +1,29 @@
-import { useEffect, useState } from "react";  
-import type { MultiValue } from 'react-select';
 import type { Bundle } from "@models/Bundle";
-import { getDocuments, addDocument, deleteDocument } from "@requests/requests";
-import { Endpoints } from "@data/Endpoints";
-import { Button } from "@components/Button";
+import type { MultiValue } from 'react-select';
 import type { Ingredient } from "@models/Ingredient";
 import { Common } from "@data/Common";
+import { useEffect, useState } from "react";  
+import { Endpoints } from "@data/Endpoints";
+import { Button } from "@components/Button";
 import { BundleForm } from "@components/BundleForm";
+import { useColumnSort } from "@helpers/useColumnSort";
+import { getDocuments, addDocument, deleteDocument } from "@requests/requests";
+import "@styles/Table.css"; 
 
 export function Bundles() {
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [selectedIngredients, setSelectedIngredients] = useState<Ingredient[]>([]);
+  const {data, sortColumn, sortDirection, handleSort} = useColumnSort<Bundle>(bundles);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setBundles(await getDocuments<Bundle>(Endpoints.bundles));
-      setIngredients(await getDocuments<Ingredient>(Endpoints.ingredients));
-    };
-    fetchData();
+    Promise.all([
+      getDocuments<Bundle>(Endpoints.bundles),
+      getDocuments<Ingredient>(Endpoints.ingredients)
+    ]).then(([bundlesData, ingredientsData]) => {
+      setBundles(bundlesData);
+      setIngredients(ingredientsData);
+    });
   }, []);
 
   async function handleAddBundle(bundle: Bundle): Promise<void> {
@@ -69,13 +74,15 @@ export function Bundles() {
         <table>
           <thead>
             <tr>
-              <th>Nome</th>
-              <th>Ingredientes</th>
-              <th>Ações</th>
+              <th onClick={() => handleSort("name")}>
+                Nome {sortColumn === "name" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
+              </th>
+              <th className="static">Ingredientes</th>
+              <th className="static">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {bundles.map(bundle => (
+            {data.map(bundle => (
               <tr key={bundle.id}>
                 <td>{bundle.name}</td>
                 <td>
