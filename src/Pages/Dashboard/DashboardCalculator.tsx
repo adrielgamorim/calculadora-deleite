@@ -77,17 +77,17 @@ export function DashboardCalculator() {
           usedInFrame = 0;
           break;
       }
-
+      
       if (unit === "un") {
         const singleUnitPrice = ingredient.price / quantity;
         return total + singleUnitPrice * usedInFrame;
       }
-
-      if (unit === "kg" || unit === "ml") {
+      
+      if (unit === "kg" || unit === "l") {
         quantity *= 1000;
-        unit = unit.charAt(1);
+        unit = unit === "kg" ? "g" : "ml";
       }
-
+      
       const pricePerUnit = ingredient.price / quantity;
       return total + pricePerUnit * usedInFrame;
     }, 0);
