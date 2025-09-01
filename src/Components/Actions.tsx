@@ -15,7 +15,7 @@ export function Actions({ handleEdit, handleDelete }: ActionProps) {
             <span>{<RiMenuUnfold3Line size={24} />}</span>
             <div className="actions-menu">
                 <Button label={<MdEdit />} onClick={handleEdit} />
-                <Button label={<RiDeleteBin2Line />} onClick={handleDelete} />
+                <Button label={<RiDeleteBin2Line color="red" />} onClick={handleDelete} />
             </div>
         </td>
     );

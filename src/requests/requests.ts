@@ -1,11 +1,17 @@
 import { db } from "@helpers/service";
-import { collection, getDocs, doc, setDoc, deleteDoc, addDoc } from "firebase/firestore";
+import { collection, getDoc, getDocs, doc, setDoc, deleteDoc, addDoc } from "firebase/firestore";
 import type { Base } from "@models/Base";
 
 export async function getDocuments<T>(collectionName: string): Promise<T[]> {
   const collectionRef = collection(db, collectionName);
   const snapshot = await getDocs(collectionRef);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as T[];
+}
+
+export async function getDocumentById<T>(collectionName: string, id: string): Promise<T | null> {
+  const docRef = doc(db, collectionName, id);
+  const snapshot = await getDoc(docRef);
+  return snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() } as T) : null;
 }
 
 export async function addDocument<T extends Base>(collectionName: string, data: T): Promise<string> {

@@ -4,6 +4,7 @@ import type { MultiValue } from 'react-select';
 import type { Ingredient } from "@models/Ingredient";
 import { Common } from "@data/Common";
 import { Frames } from "@data/Frames";
+import { helpers } from "@helpers/helpers";
 import { Button } from "@components/Button";
 import { Endpoints } from "@data/Endpoints";
 import { useEffect, useState } from "react";
@@ -34,19 +35,31 @@ export function Cakes() {
     });
   }, []);
 
+  useEffect(() => {
+      (async () => {
+        setCakes(await helpers.pullCakesWithIngredients(cakes));
+      })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [bundles]);
+
   async function handleAddCake(cake: Cake): Promise<void> {
     if (!cake.name) {
       alert("Por favor, preencha o campo Nome.");
       return;
     }
+
     if (!cake.frame) {
       alert("Por favor, selecione o tamanho do Bolo.");
       return;
     }
+
     if (selectedIngredients.length + selectedBundles.length <= 1) {
       alert("Por favor, selecione pelo menos dois itens.");
       return;
     }
+
+    cake.ingredients = !cake.ingredients ? undefined : cake.ingredients.map(ingredient => ({ id: ingredient.id })).filter(ingredient => ingredient.id) as Ingredient[];
+    cake.bundles = !cake.bundles ? undefined : cake.bundles.map(bundle => ({ id: bundle.id })).filter(bundle => bundle.id) as Bundle[];
     await addDocument<Cake>(Endpoints.cakes, cake);
     setCakes(await getDocuments<Cake>(Endpoints.cakes));
     window.location.reload();
@@ -64,7 +77,8 @@ export function Cakes() {
   async function handleDelCake(id: string): Promise<void> {
     if (window.confirm("Tem certeza que deseja remover este bolo?")) {
       await deleteDocument(Endpoints.cakes, id);
-      setCakes(await getDocuments<Cake>(Endpoints.cakes));
+      const cakes = await getDocuments<Cake>(Endpoints.cakes);
+      setCakes(await helpers.pullCakesWithIngredients(cakes));
     }
   }
 
@@ -82,7 +96,9 @@ export function Cakes() {
   }
 
   function getIngredientOptionsForSelect(): { value: string; label: string }[] {
-    return ingredients.map(ingredient => ({ value: ingredient.id!, label: ingredient.name }));
+    return ingredients
+      .map(ingredient => ({ value: ingredient.id!, label: ingredient.name }))
+      .sort((a, b) => a.label.localeCompare(b.label));
   }
 
   function handleIngredientOptionsChange(selectedOptions: MultiValue<{ value: string; label: string }>): void {
@@ -91,7 +107,9 @@ export function Cakes() {
   }
 
   function getBundleOptionsForSelect(): { value: string; label: string }[] {
-    return bundles.map(bundle => ({ value: bundle.id!, label: bundle.name }));
+    return bundles
+      .map(bundle => ({ value: bundle.id!, label: bundle.name }))
+      .sort((a, b) => a.label.localeCompare(b.label));
   }
 
   function handleBundleOptionsChange(selectedOptions: MultiValue<{ value: string; label: string }>): void {

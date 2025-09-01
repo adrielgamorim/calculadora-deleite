@@ -1,6 +1,4 @@
 import "@styles/Table.css";
-import type { Cake } from "@models/Cake";
-import type { Bundle } from "@models/Bundle";
 import type { Ingredient } from "@models/Ingredient";
 import { Common } from "@data/Common";
 import { helpers } from "@helpers/helpers";
@@ -55,9 +53,6 @@ export function Ingredients() {
   }
 
   async function handleEditIngredient(id: string): Promise<void> {
-    // Alert about beta feature
-    alert("ATENÇÃO: NÃO É RECOMENDADO EDITAR INGREDIENTES ATUALMENTE.");
-
     const ingredientToEdit = ingredients.find(ingredient => ingredient.id === id);
     const updatedIngredient = helpers.promptEditIngredient(ingredientToEdit!);
     if (updatedIngredient === ingredientToEdit) {
@@ -69,11 +64,11 @@ export function Ingredients() {
   }
 
   async function handleDelIngredient(id: string): Promise<void> {
-    if (await checkIngredientIsUsedInBundles(id)) {
+    if (await helpers.checkIngredientIsUsedInBundles(id)) {
       alert("Este ingrediente está sendo usado em um conjunto e não pode ser removido.");
       return;
     }
-    if (await checkIngredientIsUsedInCakes(id)) {
+    if (await helpers.checkIngredientIsUsedInCakes(id)) {
       alert("Este ingrediente está sendo usado em um bolo e não pode ser removido.");
       return;
     }
@@ -82,16 +77,6 @@ export function Ingredients() {
       await deleteDocument(Endpoints.ingredients, id);
       setIngredients(await getDocuments<Ingredient>(Endpoints.ingredients));
     }
-  }
-
-  async function checkIngredientIsUsedInBundles(ingredientId: string): Promise<boolean> {
-    const bundles = await getDocuments<Bundle>(Endpoints.bundles);
-    return bundles.some(bundle => bundle.ingredients.some(ingredient => ingredient.id === ingredientId));
-  }
-
-  async function checkIngredientIsUsedInCakes(ingredientId: string): Promise<boolean> {
-    const cakes = await getDocuments<Cake>(Endpoints.cakes);
-    return cakes.some(cake => cake.ingredients!.some(ingredient => ingredient.id === ingredientId));
   }
 
   return (

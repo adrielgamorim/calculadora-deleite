@@ -26,6 +26,13 @@ export function DashboardCalculator() {
     });
   }, []);
 
+    useEffect(() => {
+      (async () => {
+        setCakes(await helpers.pullCakesWithIngredients(cakes));
+      })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [config]);
+
   useEffect(() => {
     const pricesArray: Price[] = cakes.map(cake => {
       const base = calculateBaseCakePrice(cake);
@@ -87,7 +94,7 @@ export function DashboardCalculator() {
         quantity *= 1000;
         unit = unit === "kg" ? "g" : "ml";
       }
-      
+
       const pricePerUnit = ingredient.price / quantity;
       return total + pricePerUnit * usedInFrame;
     }, 0);

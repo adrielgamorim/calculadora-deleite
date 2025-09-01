@@ -3,6 +3,7 @@ import type { Bundle } from "@models/Bundle";
 import type { MultiValue } from 'react-select';
 import type { Ingredient } from "@models/Ingredient";
 import { Common } from "@data/Common";
+import { helpers } from "@helpers/helpers";
 import { useEffect, useState } from "react";
 import { Endpoints } from "@data/Endpoints";
 import { Button } from "@components/Button";
@@ -29,6 +30,13 @@ export function Bundles() {
     });
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      setBundles(await helpers.pullBundlesWithIngredients(bundles));
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ingredients]);
+
   async function handleAddBundle(bundle: Bundle): Promise<void> {
     if (!bundle.name) {
       alert("Por favor, preencha o Nome.");
@@ -38,6 +46,7 @@ export function Bundles() {
       alert("Por favor, selecione pelo menos dois ingredientes.");
       return;
     }
+    bundle.ingredients = bundle.ingredients.map(ingredient => ({ id: ingredient.id })).filter(ingredient => ingredient.id) as Ingredient[];
     await addDocument<Bundle>(Endpoints.bundles, bundle);
     setBundles(await getDocuments<Bundle>(Endpoints.bundles));
     window.location.reload();
@@ -51,14 +60,21 @@ export function Bundles() {
   }
 
   async function handleDelBundle(id: string): Promise<void> {
+    if (await helpers.checkBundleIsUsedInCakes(id)) {
+      alert("Este conjunto está sendo usado em um bolo e não pode ser removido.");
+      return;
+    }
     if (window.confirm("Tem certeza que deseja remover este conjunto?")) {
       await deleteDocument(Endpoints.bundles, id);
-      setBundles(await getDocuments<Bundle>(Endpoints.bundles));
+      const bundles = await getDocuments<Bundle>(Endpoints.bundles);
+      setBundles(await helpers.pullBundlesWithIngredients(bundles));
     }
   }
 
   function getIngredientOptionsForSelect(): { value: string; label: string }[] {
-    return ingredients.map(ingredient => ({ value: ingredient.id!, label: ingredient.name }));
+    return ingredients
+      .map(ingredient => ({ value: ingredient.id!, label: ingredient.name }))
+      .sort((a, b) => a.label.localeCompare(b.label));
   }
 
   function handleOptionsChange(selectedOptions: MultiValue<{ value: string; label: string }>): void {
