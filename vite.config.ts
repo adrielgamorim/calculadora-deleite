@@ -22,6 +22,7 @@ export default defineConfig({
       '@pages': path.resolve(__dirname, 'src/pages'),
       '@requests': path.resolve(__dirname, 'src/requests'),
       '@styles': path.resolve(__dirname, 'src/styles'),
+      '@package': path.resolve(__dirname, 'package.json'),
     },
   },
   plugins: [
