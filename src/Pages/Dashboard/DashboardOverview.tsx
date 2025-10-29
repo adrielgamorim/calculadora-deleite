@@ -33,16 +33,31 @@ export function DashboardOverview() {
     });
   }, []);
 
+  function calculateIngredientCost(ingredient: Ingredient, usedQuantity: number): number {
+    let quantity = ingredient.quantity;
+    
+    // Special handling for unit-based ingredients
+    if (ingredient.unit === "un") {
+      const singleUnitPrice = ingredient.price / quantity;
+      return singleUnitPrice * usedQuantity;
+    }
+    
+    // Convert kg/l to g/ml for consistent calculation
+    if (ingredient.unit === "kg" || ingredient.unit === "l") {
+      quantity *= 1000;
+    }
+    
+    const pricePerUnit = ingredient.price / quantity;
+    return pricePerUnit * usedQuantity;
+  }
+
   function calculateCakePrice(cake: Cake): number {
-    // Simplified calculation - uses basic pricing logic
     let basePrice = 0;
 
     // Add direct ingredients
     if (cake.hydratedIngredients) {
       cake.hydratedIngredients.forEach(hydrated => {
-        const ingredient = hydrated.ingredient;
-        const pricePerUnit = ingredient.price / ingredient.quantity;
-        basePrice += pricePerUnit * hydrated.quantity;
+        basePrice += calculateIngredientCost(hydrated.ingredient, hydrated.quantity);
       });
     }
 
@@ -50,26 +65,12 @@ export function DashboardOverview() {
     if (cake.hydratedBundles) {
       cake.hydratedBundles.forEach(hydratedBundle => {
         hydratedBundle.hydratedQuantities?.forEach(hydrated => {
-          const ingredient = hydrated.ingredient;
-          const pricePerUnit = ingredient.price / ingredient.quantity;
-          basePrice += pricePerUnit * hydrated.quantity;
+          basePrice += calculateIngredientCost(hydrated.ingredient, hydrated.quantity);
         });
       });
     }
 
-    // Add packaging (simplified - hardcoded values)
-    const packagingCosts: { [key: string]: number } = {
-      [Frames.frame15]: 5,
-      [Frames.frame25]: 8,
-      [Frames.frame35]: 12
-    };
-    basePrice += packagingCosts[cake.frame as string] || 0;
-
-    // Apply conversion rate (simplified - hardcoded 40%)
-    const conversionRate = 40;
-    const finalPrice = basePrice / (1 - (conversionRate / 100));
-
-    return finalPrice;
+    return basePrice;
   }
 
   function getTop3MostExpensiveCakes(): CakeWithPrice[] {
