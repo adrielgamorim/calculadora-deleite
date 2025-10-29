@@ -1,7 +1,6 @@
 import "@styles/AddItemForm.css";
 import { SlClose } from "react-icons/sl";
 import { Button } from "@components/Button";
-import { InformationSpan } from "@components/InformationSpan";
 
 type IngredientFormProps = {
     handleSubmit: () => Promise<void>;
@@ -9,8 +8,6 @@ type IngredientFormProps = {
 };
 
 export function IngredientForm({ handleSubmit, handleCloseMenu }: IngredientFormProps) {
-    const frameInformationMessage = "Informe a quantidade do ingrediente que é utilizada em um bolo de aro {0} (em gramas, ml, ou unidades).";
-
     return (
         <form id="form">
             <div className="form-header">
@@ -39,24 +36,6 @@ export function IngredientForm({ handleSubmit, handleCloseMenu }: IngredientForm
                     <option value="ml">ml</option>
                     <option value="un">un</option>
                 </select>
-            </div>
-            <div className="form-group ingredient-form-frame15">
-                <label htmlFor="ingredient-frame15">Aro 15:
-                    <InformationSpan message={frameInformationMessage.format(15)} />
-                </label>
-                <input id="ingredient-frame15" type="number" />
-            </div>
-            <div className="form-group ingredient-form-frame25">
-                <label htmlFor="ingredient-frame25">Aro 25:
-                    <InformationSpan message={frameInformationMessage.format(25)} />
-                </label>
-                <input id="ingredient-frame25" type="number"  />
-            </div>
-            <div className="form-group ingredient-form-frame35">
-                <label htmlFor="ingredient-frame35">Aro 35:
-                    <InformationSpan message={frameInformationMessage.format(35)} />
-                </label>
-                <input id="ingredient-frame35" type="number" />
             </div>
             <Button label="Adicionar Ingrediente" onClick={handleSubmit} />
         </form>

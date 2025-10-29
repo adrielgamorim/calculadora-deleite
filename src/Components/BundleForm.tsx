@@ -8,9 +8,10 @@ type BundleFormProps = {
     handleCloseMenu: () => void;
     handleOptionsChange: (selectedOptions: MultiValue<{ value: string; label: string }>) => void;
     getIngredientOptionsForSelect: () => { label: string; value: string }[];
+    selectedIngredientIds: string[];
 };
 
-export function BundleForm({ handleSubmit, handleCloseMenu, handleOptionsChange, getIngredientOptionsForSelect }: BundleFormProps) {
+export function BundleForm({ handleSubmit, handleCloseMenu, handleOptionsChange, getIngredientOptionsForSelect, selectedIngredientIds }: BundleFormProps) {
     return (
         <form id="form">
             <div className="form-header">
@@ -23,7 +24,14 @@ export function BundleForm({ handleSubmit, handleCloseMenu, handleOptionsChange,
           </div>
           <div className="form-group">
             <label htmlFor="bundle-ingredients">Ingredientes*: </label>
-            <Select options={getIngredientOptionsForSelect()} onChange={handleOptionsChange} isMulti id="bundle-ingredients" placeholder="Selecione" />
+            <Select 
+              options={getIngredientOptionsForSelect()} 
+              value={getIngredientOptionsForSelect().filter(opt => selectedIngredientIds.includes(opt.value))}
+              onChange={handleOptionsChange} 
+              isMulti 
+              id="bundle-ingredients" 
+              placeholder="Selecione" 
+            />
           </div>
           <Button label="Adicionar Conjunto" onClick={handleSubmit} />
         </form>

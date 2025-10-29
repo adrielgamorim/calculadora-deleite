@@ -1,23 +1,23 @@
 import "@styles/Table.css";
 import type { Ingredient } from "@models/Ingredient";
-import { Common } from "@data/Common";
 import { helpers } from "@helpers/helpers";
 import { Button } from "@components/Button";
 import { Endpoints } from "@data/Endpoints";
 import { useEffect, useState } from "react";
 import { Actions } from "@components/Actions";
-import { useItemForm } from "@helpers/useItemForm";
-import { useColumnSort } from "@helpers/useColumnSort";
+import { useItemForm } from "@hooks/useItemForm";
+import { useColumnSort } from "@hooks/useColumnSort";
 import { IngredientForm } from "@components/IngredientForm";
 import { getDocuments, addDocument, deleteDocument, updateDocument } from "@requests/requests";
 import { RiMenuUnfold3Line } from "react-icons/ri";
-import { InformationSpan } from "@components/InformationSpan";
+import { SearchBar } from "@components/SearchBar";
+import { useSearch } from "@hooks/useSearch";
 
 export function Ingredients() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const {showAddItemMenu, setShowAddItemMenu} = useItemForm(false);
-  const {data, sortColumn, sortDirection, handleSort} = useColumnSort<Ingredient>(ingredients);
-  const frameInformationMessage = "Quantidade do ingrediente usada neste aro (em gramas, ml ou unidades)";
+  const { searchTerm, setSearchTerm, filteredData } = useSearch(ingredients, ['name', 'unit']);
+  const {data, sortColumn, sortDirection, handleSort} = useColumnSort<Ingredient>(filteredData);
 
   useEffect(() => {
     Promise.resolve(
@@ -46,9 +46,6 @@ export function Ingredients() {
       price: helpers.parseDecimal((document.getElementById("ingredient-price") as HTMLInputElement)?.value) || 0,
       quantity: helpers.parseDecimal((document.getElementById("ingredient-quantity") as HTMLInputElement)?.value) || 0,
       unit: (document.getElementById("ingredient-unit") as HTMLInputElement)?.value || "",
-      used_in_frame_15: helpers.parseDecimal((document.getElementById("ingredient-frame15") as HTMLInputElement)?.value) || 0,
-      used_in_frame_25: helpers.parseDecimal((document.getElementById("ingredient-frame25") as HTMLInputElement)?.value) || 0,
-      used_in_frame_35: helpers.parseDecimal((document.getElementById("ingredient-frame35") as HTMLInputElement)?.value) || 0,
     };
   }
 
@@ -86,6 +83,12 @@ export function Ingredients() {
       <Button label={showAddItemMenu ? "Fechar menu" : "Adicionar Ingrediente"} icon={!showAddItemMenu && <RiMenuUnfold3Line size={20} />} onClick={() => setShowAddItemMenu(prev => !prev)} />
       {<IngredientForm handleSubmit={() => handleAddIngredient(getIngredientValuesToAdd())} handleCloseMenu={() => setShowAddItemMenu(false)} />}
 
+      <SearchBar 
+        value={searchTerm} 
+        onChange={setSearchTerm}
+        placeholder="Buscar por nome ou unidade..."
+      />
+
       {ingredients.length === 0 ? <p>Nenhum ingrediente encontrado.</p> : (
         <table>
           <thead>
@@ -102,21 +105,6 @@ export function Ingredients() {
               <th onClick={() => handleSort("unit")}>
                 Unidade {sortColumn === "unit" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
               </th>
-              <th onClick={() => handleSort("used_in_frame_15")}>
-                Aro 15
-                <InformationSpan message={frameInformationMessage} />
-                {sortColumn === "used_in_frame_15" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th onClick={() => handleSort("used_in_frame_25")}>
-                Aro 25
-                <InformationSpan message={frameInformationMessage} />
-                {sortColumn === "used_in_frame_25" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th onClick={() => handleSort("used_in_frame_35")}>
-                Aro 35
-                <InformationSpan message={frameInformationMessage} />
-                {sortColumn === "used_in_frame_35" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
               <th className="static">Ações</th>
             </tr>
           </thead>
@@ -127,9 +115,6 @@ export function Ingredients() {
                 <td>{ingredient.price}</td>
                 <td>{ingredient.quantity}</td>
                 <td>{ingredient.unit}</td>
-                <td>{ingredient.used_in_frame_15 || Common.noTableItemFoundContent}</td>
-                <td>{ingredient.used_in_frame_25 || Common.noTableItemFoundContent}</td>
-                <td>{ingredient.used_in_frame_35 || Common.noTableItemFoundContent}</td>
                 <Actions
                   handleEdit={() => handleEditIngredient(ingredient.id!)}
                   handleDelete={() => handleDelIngredient(ingredient.id!)}

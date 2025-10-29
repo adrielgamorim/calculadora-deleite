@@ -1,6 +1,5 @@
 import type { Cake } from "@models/Cake";
 import type { Bundle } from "@models/Bundle";
-import type { MultiValue } from 'react-select';
 import type { Ingredient } from "@models/Ingredient";
 import { Common } from "@data/Common";
 import { Frames } from "@data/Frames";
@@ -9,29 +8,36 @@ import { Button } from "@components/Button";
 import { Endpoints } from "@data/Endpoints";
 import { useEffect, useState } from "react";
 import { CakeForm } from "@components/CakeForm";
-import { useItemForm } from "@helpers/useItemForm";
+import { useItemForm } from "@hooks/useItemForm";
 import { RiDeleteBin2Line, RiMenuUnfold3Line } from "react-icons/ri";
-import { useColumnSort } from "@helpers/useColumnSort";
+import { useColumnSort } from "@hooks/useColumnSort";
 import { getDocuments, addDocument, deleteDocument } from "@requests/requests";
+import { SearchBar } from "@components/SearchBar";
+import { useSearch } from "@hooks/useSearch";
 
 export function Cakes() {
   const [cakes, setCakes] = useState<Cake[]>([]);
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [selectedBundles, setSelectedBundles] = useState<Bundle[]>([]);
-  const [selectedIngredients, setSelectedIngredients] = useState<Ingredient[]>([]);
+  const [selectedIngredientIds, setSelectedIngredientIds] = useState<string[]>([]);
+  const [selectedBundleIds, setSelectedBundleIds] = useState<string[]>([]);
+  const [ingredientQuantities, setIngredientQuantities] = useState<Map<string, number>>(new Map());
+  const [bundleIngredientQuantities, setBundleIngredientQuantities] = useState<Map<string, Map<string, number>>>(new Map());
   const { showAddItemMenu, setShowAddItemMenu } = useItemForm(false);
-  const { data, sortColumn, sortDirection, handleSort } = useColumnSort<Cake>(cakes);
+  const { searchTerm, setSearchTerm, filteredData } = useSearch(cakes, ['name', 'frame']);
+  const { data, sortColumn, sortDirection, handleSort } = useColumnSort<Cake>(filteredData);
 
   useEffect(() => {
     Promise.all([
       getDocuments<Cake>(Endpoints.cakes),
       getDocuments<Ingredient>(Endpoints.ingredients),
       getDocuments<Bundle>(Endpoints.bundles)
-    ]).then(([cakesData, ingredientsData, bundlesData]) => {
+    ]).then(async ([cakesData, ingredientsData, bundlesData]) => {
       setCakes(cakesData);
       setIngredients(ingredientsData);
-      setBundles(bundlesData);
+      // Hydrate bundles before setting them so form can access hydratedIngredients
+      const hydratedBundles = await helpers.pullBundlesWithIngredients(bundlesData);
+      setBundles(hydratedBundles);
     });
   }, []);
 
@@ -42,36 +48,57 @@ export function Cakes() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [bundles]);
 
-  async function handleAddCake(cake: Cake): Promise<void> {
-    if (!cake.name) {
+  async function handleAddCake(): Promise<void> {
+    const name = (document.getElementById("cake-name") as HTMLInputElement)?.value || "";
+    const frame = (document.getElementById("cake-frame") as HTMLSelectElement)?.value as Frames;
+
+    if (!name) {
       alert("Por favor, preencha o campo Nome.");
       return;
     }
 
-    if (!cake.frame) {
+    if (!frame) {
       alert("Por favor, selecione o tamanho do Bolo.");
       return;
     }
 
-    if (selectedIngredients.length + selectedBundles.length <= 1) {
-      alert("Por favor, selecione pelo menos dois itens.");
+    if (selectedIngredientIds.length + selectedBundleIds.length === 0) {
+      alert("Por favor, selecione pelo menos um ingrediente ou conjunto.");
       return;
     }
 
-    cake.ingredients = !cake.ingredients ? undefined : cake.ingredients.map(ingredient => ({ id: ingredient.id })).filter(ingredient => ingredient.id) as Ingredient[];
-    cake.bundles = !cake.bundles ? undefined : cake.bundles.map(bundle => ({ id: bundle.id })).filter(bundle => bundle.id) as Bundle[];
+    // Build complete cake structure
+    const cake: Cake = {
+      name,
+      frame,
+      ingredients: selectedIngredientIds.map(ingredientId => ({
+        ingredientId,
+        quantity: ingredientQuantities.get(ingredientId) || 0
+      })),
+      bundles: selectedBundleIds.map(bundleId => ({
+        id: bundleId,
+        ingredientQuantities: Array.from(bundleIngredientQuantities.get(bundleId)?.entries() || []).map(([ingredientId, quantity]) => ({
+          ingredientId,
+          quantity
+        }))
+      }))
+    };
+
     await addDocument<Cake>(Endpoints.cakes, cake);
-    setCakes(await getDocuments<Cake>(Endpoints.cakes));
-    window.location.reload();
+    const freshCakes = await getDocuments<Cake>(Endpoints.cakes);
+    setCakes(await helpers.pullCakesWithIngredients(freshCakes));
+    
+    // Reset form state
+    resetForm();
   }
 
-  function getCakeToAdd(): Cake {
-    return {
-      name: (document.getElementById("cake-name") as HTMLInputElement)?.value || "",
-      ingredients: selectedIngredients,
-      bundles: selectedBundles,
-      frame: (document.getElementById("cake-frame") as HTMLSelectElement)?.value as Frames
-    };
+  function resetForm(): void {
+    setSelectedIngredientIds([]);
+    setSelectedBundleIds([]);
+    setIngredientQuantities(new Map());
+    setBundleIngredientQuantities(new Map());
+    (document.getElementById("form") as HTMLFormElement)?.reset();
+    setShowAddItemMenu(false);
   }
 
   async function handleDelCake(id: string): Promise<void> {
@@ -101,20 +128,10 @@ export function Cakes() {
       .sort((a, b) => a.label.localeCompare(b.label));
   }
 
-  function handleIngredientOptionsChange(selectedOptions: MultiValue<{ value: string; label: string }>): void {
-    const labels = selectedOptions ? selectedOptions.map(option => option.label) : [];
-    setSelectedIngredients(ingredients.filter(ingredient => labels.includes(ingredient.name)));
-  }
-
   function getBundleOptionsForSelect(): { value: string; label: string }[] {
     return bundles
       .map(bundle => ({ value: bundle.id!, label: bundle.name }))
       .sort((a, b) => a.label.localeCompare(b.label));
-  }
-
-  function handleBundleOptionsChange(selectedOptions: MultiValue<{ value: string; label: string }>): void {
-    const labels = selectedOptions ? selectedOptions.map(option => option.label) : [];
-    setSelectedBundles(bundles.filter(bundle => labels.includes(bundle.name)));
   }
 
   return (
@@ -123,13 +140,27 @@ export function Cakes() {
 
       <Button label={showAddItemMenu ? "Fechar menu" : "Adicionar Bolo"} icon={!showAddItemMenu && <RiMenuUnfold3Line size={20} />} onClick={() => setShowAddItemMenu(prev => !prev)} />
       {<CakeForm
-        handleSubmit={() => handleAddCake(getCakeToAdd())}
-        handleCloseMenu={() => setShowAddItemMenu(false)}
-        handleIngredientOptionsChange={handleIngredientOptionsChange}
+        handleSubmit={handleAddCake}
+        handleCloseMenu={resetForm}
         getIngredientOptionsForSelect={getIngredientOptionsForSelect}
         getBundleOptionsForSelect={getBundleOptionsForSelect}
-        handleBundleOptionsChange={handleBundleOptionsChange}
+        ingredients={ingredients}
+        bundles={bundles}
+        selectedIngredientIds={selectedIngredientIds}
+        setSelectedIngredientIds={setSelectedIngredientIds}
+        selectedBundleIds={selectedBundleIds}
+        setSelectedBundleIds={setSelectedBundleIds}
+        ingredientQuantities={ingredientQuantities}
+        setIngredientQuantities={setIngredientQuantities}
+        bundleIngredientQuantities={bundleIngredientQuantities}
+        setBundleIngredientQuantities={setBundleIngredientQuantities}
       />}
+
+      <SearchBar 
+        value={searchTerm} 
+        onChange={setSearchTerm}
+        placeholder="Buscar por nome ou tamanho..."
+      />
 
       {cakes.length === 0 ? <p>Nenhum Bolo encontrado.</p> : (
         <table>
@@ -152,20 +183,20 @@ export function Cakes() {
                 <td>{cake.name}</td>
                 <td>{getFrameName(cake.frame)}</td>
                 <td>
-                  {cake.bundles!.length > 0 ? cake.bundles!.map(bundle => (
-                    <span key={bundle.id}>
-                      {bundle.name}
-                      {cake.bundles!.indexOf(bundle) < cake.bundles!.length - 1 && Common.tableItemSeparator}
+                  {cake.hydratedBundles && cake.hydratedBundles.length > 0 ? cake.hydratedBundles.map((hydrated, index) => (
+                    <span key={hydrated.id}>
+                      {hydrated.bundle.name}
+                      {index < cake.hydratedBundles!.length - 1 && Common.tableItemSeparator}
                     </span>
                   )) : (
                     Common.noTableItemFoundContent
                   )}
                 </td>
                 <td>
-                  {cake.ingredients!.length > 0 ? cake.ingredients!.map(ingredient => (
-                    <span key={ingredient.id}>
-                      {ingredient.name}
-                      {cake.ingredients!.indexOf(ingredient) < cake.ingredients!.length - 1 && Common.tableItemSeparator}
+                  {cake.hydratedIngredients && cake.hydratedIngredients.length > 0 ? cake.hydratedIngredients.map((hydrated, index) => (
+                    <span key={hydrated.ingredientId}>
+                      {hydrated.ingredient.name} ({hydrated.quantity}{helpers.convertUnitForDisplay(hydrated.ingredient.unit)})
+                      {index < cake.hydratedIngredients!.length - 1 && Common.tableItemSeparator}
                     </span>
                   )) : (
                     Common.noTableItemFoundContent

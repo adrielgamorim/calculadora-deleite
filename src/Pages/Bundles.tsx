@@ -7,18 +7,21 @@ import { helpers } from "@helpers/helpers";
 import { useEffect, useState } from "react";
 import { Endpoints } from "@data/Endpoints";
 import { Button } from "@components/Button";
-import { useItemForm } from "@helpers/useItemForm";
+import { useItemForm } from "@hooks/useItemForm";
 import { RiDeleteBin2Line, RiMenuUnfold3Line } from "react-icons/ri";
 import { BundleForm } from "@components/BundleForm";
-import { useColumnSort } from "@helpers/useColumnSort";
+import { useColumnSort } from "@hooks/useColumnSort";
 import { getDocuments, addDocument, deleteDocument } from "@requests/requests";
+import { SearchBar } from "@components/SearchBar";
+import { useSearch } from "@hooks/useSearch";
 
 export function Bundles() {
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const { showAddItemMenu, setShowAddItemMenu } = useItemForm(false);
-  const [selectedIngredients, setSelectedIngredients] = useState<Ingredient[]>([]);
-  const { data, sortColumn, sortDirection, handleSort } = useColumnSort<Bundle>(bundles);
+  const [selectedIngredientIds, setSelectedIngredientIds] = useState<string[]>([]);
+  const { searchTerm, setSearchTerm, filteredData } = useSearch(bundles, ['name']);
+  const { data, sortColumn, sortDirection, handleSort } = useColumnSort<Bundle>(filteredData);
 
   useEffect(() => {
     Promise.all([
@@ -42,20 +45,26 @@ export function Bundles() {
       alert("Por favor, preencha o Nome.");
       return;
     }
-    if (selectedIngredients.length <= 1) {
+    if (selectedIngredientIds.length <= 1) {
       alert("Por favor, selecione pelo menos dois ingredientes.");
       return;
     }
-    bundle.ingredients = bundle.ingredients.map(ingredient => ({ id: ingredient.id })).filter(ingredient => ingredient.id) as Ingredient[];
     await addDocument<Bundle>(Endpoints.bundles, bundle);
-    setBundles(await getDocuments<Bundle>(Endpoints.bundles));
-    window.location.reload();
+    const freshBundles = await getDocuments<Bundle>(Endpoints.bundles);
+    setBundles(await helpers.pullBundlesWithIngredients(freshBundles));
+    resetForm();
+  }
+
+  function resetForm(): void {
+    setSelectedIngredientIds([]);
+    (document.getElementById("form") as HTMLFormElement)?.reset();
+    setShowAddItemMenu(false);
   }
 
   function getBundleToAdd(): Bundle {
     return {
       name: (document.getElementById("bundle-name") as HTMLInputElement)?.value || "",
-      ingredients: selectedIngredients,
+      ingredients: selectedIngredientIds,
     };
   }
 
@@ -78,8 +87,8 @@ export function Bundles() {
   }
 
   function handleOptionsChange(selectedOptions: MultiValue<{ value: string; label: string }>): void {
-    const labels = selectedOptions ? selectedOptions.map(option => option.label) : [];
-    setSelectedIngredients(ingredients.filter(ingredient => labels.includes(ingredient.name)));
+    const ids = selectedOptions ? selectedOptions.map(option => option.value) : [];
+    setSelectedIngredientIds(ids);
   }
 
   return (
@@ -89,10 +98,17 @@ export function Bundles() {
       <Button label={showAddItemMenu ? "Fechar menu" : "Adicionar Conjunto"} icon={!showAddItemMenu && <RiMenuUnfold3Line size={20} />} onClick={() => setShowAddItemMenu(prev => !prev)} />
       {<BundleForm
         handleSubmit={() => handleAddBundle(getBundleToAdd())}
-        handleCloseMenu={() => setShowAddItemMenu(false)}
+        handleCloseMenu={resetForm}
         handleOptionsChange={handleOptionsChange}
         getIngredientOptionsForSelect={getIngredientOptionsForSelect}
+        selectedIngredientIds={selectedIngredientIds}
       />}
+
+      <SearchBar 
+        value={searchTerm} 
+        onChange={setSearchTerm}
+        placeholder="Buscar por nome..."
+      />
 
       {bundles.length === 0 ? <p>Nenhum Conjunto encontrado.</p> : (
         <table>
@@ -110,10 +126,10 @@ export function Bundles() {
               <tr key={bundle.id}>
                 <td>{bundle.name}</td>
                 <td>
-                  {bundle.ingredients.map(ingredient => (
+                  {bundle.hydratedIngredients?.map((ingredient, index) => (
                     <span key={ingredient.id}>
-                      {ingredient.name}
-                      {bundle.ingredients.indexOf(ingredient) < bundle.ingredients.length - 1 && Common.tableItemSeparator}
+                      {ingredient.name.trim()}
+                      {index < bundle.hydratedIngredients!.length - 1 && Common.tableItemSeparator}
                     </span>
                   ))}
                 </td>

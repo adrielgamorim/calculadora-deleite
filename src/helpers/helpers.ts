@@ -23,48 +23,134 @@ export const helpers = {
     return parts.join(',');
   },
 
+  convertUnitForDisplay(unit: string): string {
+    // Convert kg to g and l to ml for better readability in cakes
+    if (unit === 'kg') {
+      return 'g';
+    }
+    if (unit === 'l') {
+      return 'ml';
+    }
+    // Keep other units as-is (g, ml, un)
+    return unit;
+  },
+
   async checkIngredientIsUsedInBundles(ingredientId: string): Promise<boolean> {
     const bundles = await getDocuments<Bundle>(Endpoints.bundles);
-    return bundles.some(bundle => bundle.ingredients.some(ingredient => ingredient.id === ingredientId));
+    return bundles?.some(bundle => bundle.ingredients.includes(ingredientId));
   },
 
   async checkIngredientIsUsedInCakes(ingredientId: string): Promise<boolean> {
     const cakes = await getDocuments<Cake>(Endpoints.cakes);
-    return cakes.some(cake => cake.ingredients!.some(ingredient => ingredient.id === ingredientId));
+    return cakes?.some(cake => 
+      cake.ingredients?.some(item => item.ingredientId === ingredientId) ||
+      cake.bundles?.some(bundle => 
+        bundle.ingredientQuantities?.some(item => item.ingredientId === ingredientId)
+      )
+    );
   },
 
   async checkBundleIsUsedInCakes(bundleId: string): Promise<boolean> {
     const cakes = await getDocuments<Cake>(Endpoints.cakes);
-    return cakes.some(cake => cake.bundles!.some(bundle => bundle.id === bundleId));
+    return cakes?.some(cake => 
+      cake.bundles?.some(item => {
+        // Handle both new format (id) and old format (bundleId)
+        const itemBundleId = item.id || (item as unknown as { bundleId: string }).bundleId;
+        return itemBundleId === bundleId;
+      })
+    );
   },
 
   async pullCakesWithIngredients(cakes: Cake[]): Promise<Cake[]> {
     return await Promise.all(cakes.map(async cake => {
-      cake.ingredients = !cake.ingredients ? undefined : (await Promise.all(
-        cake.ingredients.map(
-          ingredient => getDocumentById<Ingredient>(Endpoints.ingredients, ingredient.id!)
-        )
-      )).filter((ingredient): ingredient is Ingredient => ingredient !== null);
+      // Hydrate direct ingredients - fetch full Ingredient objects (handle old data format)
+      if (cake.ingredients && cake.ingredients.length > 0) {
+        const hydratedIngredients = await Promise.all(
+          cake.ingredients.map(async item => {
+            // Extract ingredientId (handle both string and object formats)
+            const ingredientId = typeof item.ingredientId === 'string' 
+              ? item.ingredientId 
+              : (item.ingredientId as unknown as { id: string })?.id;
+            
+            if (!ingredientId) return null;
+            
+            const ingredient = await getDocumentById<Ingredient>(Endpoints.ingredients, ingredientId);
+            return ingredient ? { ...item, ingredientId, ingredient } : null;
+          })
+        );
+        // Store hydrated data for display/calculations
+        cake.hydratedIngredients = hydratedIngredients.filter((i): i is typeof i & { ingredient: Ingredient } => i !== null);
+      }
 
-      cake.bundles = !cake.bundles ? undefined : (await Promise.all(
-        cake.bundles.map(
-          bundle => getDocumentById<Bundle>(Endpoints.bundles, bundle.id!)
-        )
-      )).filter((bundle): bundle is Bundle => bundle !== null);
+      // Hydrate bundles - fetch full Bundle objects and their ingredients
+      if (cake.bundles && cake.bundles.length > 0) {
+        const hydratedBundles = await Promise.all(
+          cake.bundles.map(async cakeBundle => {
+            const bundle = await getDocumentById<Bundle>(Endpoints.bundles, cakeBundle.id);
+            if (!bundle) return null;
 
-      cake.bundles = await this.pullBundlesWithIngredients(cake.bundles || []);
+            // Hydrate bundle's ingredients (handle both old string IDs and new format)
+            const bundleIngredientIds = (bundle.ingredients || [])
+              .map(item => typeof item === 'string' ? item : (item as unknown as { id: string })?.id)
+              .filter((id): id is string => Boolean(id));
+            
+            const bundleIngredients = await Promise.all(
+              bundleIngredientIds.map(ingredientId => 
+                getDocumentById<Ingredient>(Endpoints.ingredients, ingredientId)
+              )
+            );
+
+            // Hydrate cake's bundle ingredient quantities (handle old data format)
+            const ingredientQuantities = cakeBundle.ingredientQuantities || [];
+            const hydratedQuantities = await Promise.all(
+              ingredientQuantities.map(async item => {
+                // Extract ingredientId (handle both string and object formats)
+                const ingredientId = typeof item.ingredientId === 'string' 
+                  ? item.ingredientId 
+                  : (item.ingredientId as unknown as { id: string })?.id;
+                
+                if (!ingredientId) return null;
+                
+                const ingredient = await getDocumentById<Ingredient>(Endpoints.ingredients, ingredientId);
+                return ingredient ? { ...item, ingredientId, ingredient } : null;
+              })
+            );
+
+            return {
+              ...cakeBundle,
+              bundle,
+              bundleIngredients: bundleIngredients.filter((i): i is Ingredient => i !== null),
+              hydratedQuantities: hydratedQuantities.filter((i): i is typeof i & { ingredient: Ingredient } => i !== null)
+            };
+          })
+        );
+        // Store hydrated data for display/calculations
+        cake.hydratedBundles = hydratedBundles.filter((b): b is NonNullable<typeof b> => b !== null);
+      }
+
       return cake;
     }));
   },
 
   async pullBundlesWithIngredients(bundles: Bundle[]): Promise<Bundle[]> {
     return await Promise.all(bundles.map(async bundle => {
-      if (!bundle.ingredients) return bundle;
-      bundle.ingredients = (await Promise.all(
-        bundle.ingredients.map(
-          ingredient => getDocumentById<Ingredient>(Endpoints.ingredients, ingredient.id!)
+      if (!bundle.ingredients || bundle.ingredients.length === 0) return bundle;
+      
+      // Handle both old data (Ingredient objects) and new data (string IDs)
+      const ingredientIds = bundle.ingredients.map(item => 
+        typeof item === 'string' ? item : (item as unknown as { id: string }).id
+      ).filter(Boolean);
+      
+      // Fetch full Ingredient objects for each ingredient ID
+      const hydratedIngredients = (await Promise.all(
+        ingredientIds.map(ingredientId => 
+          getDocumentById<Ingredient>(Endpoints.ingredients, ingredientId)
         )
       )).filter((ingredient): ingredient is Ingredient => ingredient !== null);
+      
+      // Store hydrated data for display purposes
+      bundle.hydratedIngredients = hydratedIngredients;
+      
       return bundle;
     }));
   },
@@ -96,24 +182,6 @@ export const helpers = {
       alert("Unidade inválida.");
       return ingredient;
     }
-    const newUsedInFrame15Str = prompt("Qnt usada no aro 15", ingredient.used_in_frame_15.toString());
-    const newUsedInFrame15 = newUsedInFrame15Str ? helpers.parseDecimal(newUsedInFrame15Str) : NaN;
-    if (isNaN(newUsedInFrame15) || newUsedInFrame15 < 0) {
-      alert("Quantidade inválida.");
-      return ingredient;
-    }
-    const newUsedInFrame25Str = prompt("Qnt usada no aro 25", ingredient.used_in_frame_25.toString());
-    const newUsedInFrame25 = newUsedInFrame25Str ? helpers.parseDecimal(newUsedInFrame25Str) : NaN;
-    if (isNaN(newUsedInFrame25) || newUsedInFrame25 < 0) {
-      alert("Quantidade inválida.");
-      return ingredient;
-    }
-    const newUsedInFrame35Str = prompt("Qnt usada no aro 35", ingredient.used_in_frame_35.toString());
-    const newUsedInFrame35 = newUsedInFrame35Str ? helpers.parseDecimal(newUsedInFrame35Str) : NaN;
-    if (isNaN(newUsedInFrame35) || newUsedInFrame35 < 0) {
-      alert("Quantidade inválida.");
-      return ingredient;
-    }
 
     return {
       ...ingredient,
@@ -121,9 +189,6 @@ export const helpers = {
       price: newPrice,
       quantity: newQuantity,
       unit: newUnit ?? ingredient.unit,
-      used_in_frame_15: newUsedInFrame15,
-      used_in_frame_25: newUsedInFrame25,
-      used_in_frame_35: newUsedInFrame35,
     };
   }
 }

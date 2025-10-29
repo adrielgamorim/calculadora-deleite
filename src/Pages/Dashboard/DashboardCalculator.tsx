@@ -8,13 +8,35 @@ import { Endpoints } from "@data/Endpoints";
 import { useState, useEffect } from "react";
 import { Loading } from "@components/Loading";
 import { getDocuments } from "@requests/requests";
-import { useColumnSort } from "@helpers/useColumnSort";
+import { useColumnSort } from "@hooks/useColumnSort";
+import { useColumnVisibility } from "@hooks/useColumnVisibility";
+import { ColumnFilterMenu } from "@components/ColumnFilterMenu";
 
 export function DashboardCalculator() {
   const [config, setConfig] = useState<ConfigModel | null>(null);
   const [cakes, setCakes] = useState<Cake[]>([]);
   const [prices, setPrices] = useState<Price[]>([]);
   const { data, sortColumn, sortDirection, handleSort } = useColumnSort<Price>(prices);
+
+  const columns = [
+    { key: 'name' as keyof Price, label: 'Nome' },
+    { key: 'base' as keyof Price, label: 'Preço base' },
+    { key: 'baseWithPackaging' as keyof Price, label: 'Preço com embalagem' },
+    { key: 'baseSlice' as keyof Price, label: 'Preço base Fatia' },
+    { key: 'baseSliceWithPackaging' as keyof Price, label: 'Preço Fatia com embalagem' },
+    { key: 'converted' as keyof Price, label: 'Preço Bolo convertido' },
+    { key: 'convertedWithPackaging' as keyof Price, label: 'Preço convertido com embalagem' },
+    { key: 'convertedSlice' as keyof Price, label: 'Preço Fatia convertido' },
+    { key: 'convertedSliceWithPackaging' as keyof Price, label: 'Preço Fatia convertido com embalagem' },
+    { key: 'sellingBasePrice' as keyof Price, label: 'Preço Bolo praticado' },
+    { key: 'sellingSlicePrice' as keyof Price, label: 'Preço Fatia praticado' },
+    { key: 'ifoodSellingBasePrice' as keyof Price, label: 'Preço Bolo Ifood' },
+    { key: 'ifoodSellingSlicePrice' as keyof Price, label: 'Preço Fatia Ifood' },
+  ];
+
+  const { visibleColumns, toggleColumn, isColumnVisible } = useColumnVisibility(
+    columns.map(c => c.key as string)
+  );
 
   useEffect(() => {
     Promise.all([
@@ -26,12 +48,12 @@ export function DashboardCalculator() {
     });
   }, []);
 
-    useEffect(() => {
-      (async () => {
-        setCakes(await helpers.pullCakesWithIngredients(cakes));
-      })();
+  useEffect(() => {
+    (async () => {
+      setCakes(await helpers.pullCakesWithIngredients(cakes));
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [config]);
+  }, [config]);
 
   useEffect(() => {
     const pricesArray: Price[] = cakes.map(cake => {
@@ -61,42 +83,32 @@ export function DashboardCalculator() {
       };
     });
     setPrices(pricesArray);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cakes]);
 
-  function calculateBaseIngredientsPrice(cake: Cake, ingredients: typeof cake.ingredients = []) {
-    return ingredients?.reduce((total, ingredient) => {
-      let quantity: number = ingredient.quantity;
-      let unit: string = ingredient.unit;
-      let usedInFrame: number;
+  function calculateIngredientCost(ingredient: { price: number; quantity: number; unit: string }, usedQuantity: number): number {
+    let quantity: number = ingredient.quantity;
 
-      switch (cake.frame) {
-        case Frames.frame15:
-          usedInFrame = ingredient.used_in_frame_15;
-          break;
-        case Frames.frame25:
-          usedInFrame = ingredient.used_in_frame_25;
-          break;
-        case Frames.frame35:
-          usedInFrame = ingredient.used_in_frame_35;
-          break;
-        default:
-          usedInFrame = 0;
-          break;
-      }
-      
-      if (unit === "un") {
-        const singleUnitPrice = ingredient.price / quantity;
-        return total + singleUnitPrice * usedInFrame;
-      }
-      
-      if (unit === "kg" || unit === "l") {
-        quantity *= 1000;
-        unit = unit === "kg" ? "g" : "ml";
-      }
+    // Calculate price per unit
+    if (ingredient.unit === "un") {
+      const singleUnitPrice = ingredient.price / quantity;
+      return singleUnitPrice * usedQuantity;
+    }
 
-      const pricePerUnit = ingredient.price / quantity;
-      return total + pricePerUnit * usedInFrame;
+    // Convert kg/l to g/ml for consistent calculation
+    if (ingredient.unit === "kg" || ingredient.unit === "l") {
+      quantity *= 1000;
+    }
+
+    const pricePerUnit = ingredient.price / quantity;
+    return pricePerUnit * usedQuantity;
+  }
+
+  function calculateBaseIngredientsPrice(cake: Cake): number {
+    if (!cake.hydratedIngredients) return 0;
+
+    return cake.hydratedIngredients.reduce((total, item) => {
+      return total + calculateIngredientCost(item.ingredient, item.quantity);
     }, 0);
   }
 
@@ -106,11 +118,18 @@ export function DashboardCalculator() {
       return 0;
     }
 
-    const ingredientsPrice: number = calculateBaseIngredientsPrice(cake, cake.ingredients) || 0;
-    const bundlesPrices: number[] = cake.bundles?.map(bundle => {
-      return calculateBaseIngredientsPrice(cake, bundle.ingredients);
-    }) || [0];
-    const bundlesPrice: number = bundlesPrices.reduce((total, price) => total + price, 0);
+    // Calculate direct ingredients price
+    const ingredientsPrice: number = calculateBaseIngredientsPrice(cake);
+
+    // Calculate bundle ingredients price
+    const bundlesPrice: number = cake.hydratedBundles?.reduce((total, cakeBundle) => {
+      // Calculate price for each ingredient quantity in this bundle
+      const bundleIngredientCost = cakeBundle.hydratedQuantities.reduce((bundleTotal, item) => {
+        return bundleTotal + calculateIngredientCost(item.ingredient, item.quantity);
+      }, 0);
+
+      return total + bundleIngredientCost;
+    }, 0) || 0;
 
     return ingredientsPrice + bundlesPrice;
   }
@@ -161,67 +180,32 @@ export function DashboardCalculator() {
   return (
     <div>
       <h1>Calculadora</h1>
+
+      <ColumnFilterMenu
+        columns={columns.map(c => ({ key: c.key as string, label: c.label }))}
+        visibleColumns={visibleColumns}
+        onToggle={toggleColumn}
+      />
+
       {prices.length === 0 ? <Loading /> : (
         <table>
           <thead>
             <tr>
-              <th onClick={() => handleSort("name")}>
-                Nome {sortColumn === "name" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th onClick={() => handleSort("base")}>
-                Preço base {sortColumn === "base" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th onClick={() => handleSort("baseWithPackaging")}>
-                Preço com embalagem {sortColumn === "baseWithPackaging" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th onClick={() => handleSort("baseSlice")}>
-                Preço base Fatia {sortColumn === "baseSlice" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th onClick={() => handleSort("baseSliceWithPackaging")}>
-                Preço Fatia com embalagem {sortColumn === "baseSliceWithPackaging" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th onClick={() => handleSort("converted")}>
-                Preço Bolo convertido {sortColumn === "converted" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th onClick={() => handleSort("convertedWithPackaging")}>
-                Preço convertido com embalagem {sortColumn === "convertedWithPackaging" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th onClick={() => handleSort("convertedSlice")}>
-                Preço Fatia convertido {sortColumn === "convertedSlice" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th onClick={() => handleSort("convertedSliceWithPackaging")}>
-                Preço Fatia convertido com embalagem {sortColumn === "convertedSliceWithPackaging" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th onClick={() => handleSort("sellingBasePrice")}>
-                Preço Bolo praticado {sortColumn === "sellingBasePrice" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th onClick={() => handleSort("sellingSlicePrice")}>
-                Preço Fatia praticado {sortColumn === "sellingSlicePrice" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th onClick={() => handleSort("ifoodSellingBasePrice")}>
-                Preço Bolo Ifood {sortColumn === "ifoodSellingBasePrice" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th onClick={() => handleSort("ifoodSellingSlicePrice")}>
-                Preço Fatia Ifood {sortColumn === "ifoodSellingSlicePrice" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
+              {columns.filter(col => isColumnVisible(col.key as string)).map(col => (
+                <th key={col.key} onClick={() => handleSort(col.key)}>
+                  {col.label} {sortColumn === col.key ? (sortDirection === "asc" ? "↑" : "↓") : ""}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {data.map(priceTable => (
               <tr key={priceTable.id}>
-                <td>{priceTable.name}</td>
-                <td>R${priceTable.base}</td>
-                <td>R${priceTable.baseWithPackaging}</td>
-                <td>R${priceTable.baseSlice}</td>
-                <td>R${priceTable.baseSliceWithPackaging}</td>
-                <td>R${priceTable.converted}</td>
-                <td>R${priceTable.convertedWithPackaging}</td>
-                <td>R${priceTable.convertedSlice}</td>
-                <td>R${priceTable.convertedSliceWithPackaging}</td>
-                <td>R${priceTable.sellingBasePrice}</td>
-                <td>R${priceTable.sellingSlicePrice}</td>
-                <td>R${priceTable.ifoodSellingBasePrice}</td>
-                <td>R${priceTable.ifoodSellingSlicePrice}</td>
+                {columns.filter(col => isColumnVisible(col.key as string)).map(col => (
+                  <td key={col.key}>
+                    {col.key === 'name' ? priceTable[col.key] : `R$${priceTable[col.key]}`}
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>
