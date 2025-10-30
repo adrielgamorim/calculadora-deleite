@@ -1,1 +1,1 @@
-{"name":"Calculadora Deleite","short_name":"Calculadora Deleite","start_url":"index.html","display":"standalone","background_color":"#000000","theme_color":"#ffffff","lang":"en","scope":"/calculadora-deleite/","icons":[{"src":"logo.png","sizes":"any","type":"image/svg+xml"}]}
+{"name":"Calculadora Deleite","short_name":"Calculadora Deleite","start_url":"index.html","display":"standalone","background_color":"transparent","theme_color":"transparent","lang":"en","scope":"/calculadora-deleite/","icons":[{"src":"logo.png","sizes":"any","type":"image/svg+xml"}]}
