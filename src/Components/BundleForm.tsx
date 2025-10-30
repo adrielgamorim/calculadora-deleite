@@ -1,11 +1,11 @@
 import "@styles/AddItemForm.css";
 import type { Bundle } from "@models/Bundle";
 import Select, { type MultiValue } from 'react-select';
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 type BundleFormProps = {
     initialValues?: Bundle | null;
-    onSubmit: () => Promise<void>;
+    onSubmit: (data: Bundle) => Promise<void>;
     onCancel: () => void;
     handleOptionsChange: (selectedOptions: MultiValue<{ value: string; label: string }>) => void;
     getIngredientOptionsForSelect: () => { label: string; value: string }[];
@@ -22,20 +22,39 @@ export function BundleForm({
     selectedIngredientIds,
     isEditing = false 
 }: BundleFormProps) {
+    const [formData, setFormData] = useState({
+        name: ""
+    });
+
     useEffect(() => {
         if (initialValues) {
-            const form = document.getElementById("bundle-form") as HTMLFormElement;
-            if (form) {
-                (form.elements.namedItem("bundle-name") as HTMLInputElement).value = initialValues.name || "";
-            }
+            setFormData({
+                name: initialValues.name || ""
+            });
         }
     }, [initialValues]);
 
+    function handleInputChange(field: keyof typeof formData, value: string) {
+        setFormData(prev => ({ ...prev, [field]: value }));
+    }
+
+    async function handleSubmit() {
+        await onSubmit({
+            name: formData.name
+        } as Bundle);
+    }
+
     return (
-        <form id="bundle-form" className="modal-form">
+        <form id="bundle-form" className="modal-form" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
             <div className="form-group form-name">
                 <label htmlFor="bundle-name">Nome*: </label>
-                <input id="bundle-name" name="bundle-name" type="text" />
+                <input 
+                    id="bundle-name" 
+                    name="bundle-name" 
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                />
             </div>
             <div className="form-group">
                 <label htmlFor="bundle-ingredients">Ingredientes*: </label>
@@ -54,7 +73,7 @@ export function BundleForm({
                 <button type="button" className="button-secondary" onClick={onCancel}>
                     Cancelar
                 </button>
-                <button type="button" className="button-primary" onClick={onSubmit}>
+                <button type="submit" className="button-primary">
                     {isEditing ? "Salvar Alterações" : "Adicionar Conjunto"}
                 </button>
             </div>

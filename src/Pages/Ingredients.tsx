@@ -45,45 +45,38 @@ export function Ingredients() {
   function closeFormModal() {
     formModal.close();
     setEditingItem(null);
-    // Reset form
-    const form = document.getElementById("ingredient-form") as HTMLFormElement;
-    form?.reset();
   }
 
-  async function handleSubmit(): Promise<void> {
-    const ingredient = getIngredientValuesFromForm();
-    
+  async function handleSubmit(ingredient: Ingredient): Promise<void> {
     if (!ingredient.name || !ingredient.price || !ingredient.quantity || !ingredient.unit) {
       toast.error("Por favor, preencha os campos obrigatórios.");
       return;
     }
 
+    // Parse decimal values
+    const parsedIngredient = {
+      ...ingredient,
+      price: helpers.parseDecimal(ingredient.price as unknown as string),
+      quantity: helpers.parseDecimal(ingredient.quantity as unknown as string)
+    };
+
     if (editingItem) {
       // Update existing ingredient
-      await updateDocument<Ingredient>(Endpoints.ingredients, editingItem.id!, ingredient);
+      await updateDocument<Ingredient>(Endpoints.ingredients, editingItem.id!, parsedIngredient);
       setIngredients(await getDocuments<Ingredient>(Endpoints.ingredients));
       toast.success("Ingrediente atualizado com sucesso!");
     } else {
       // Add new ingredient
-      if (ingredients.some(i => i.name === ingredient.name)) {
+      if (ingredients.some(i => i.name === parsedIngredient.name)) {
         toast.error("Este ingrediente já está na lista.");
         return;
       }
-      await addDocument<Ingredient>(Endpoints.ingredients, ingredient);
+      await addDocument<Ingredient>(Endpoints.ingredients, parsedIngredient);
       setIngredients(await getDocuments<Ingredient>(Endpoints.ingredients));
       toast.success("Ingrediente adicionado com sucesso!");
     }
     
     closeFormModal();
-  }
-
-  function getIngredientValuesFromForm(): Ingredient {
-    return {
-      name: (document.getElementById("ingredient-name") as HTMLInputElement)?.value || "",
-      price: helpers.parseDecimal((document.getElementById("ingredient-price") as HTMLInputElement)?.value) || 0,
-      quantity: helpers.parseDecimal((document.getElementById("ingredient-quantity") as HTMLInputElement)?.value) || 0,
-      unit: (document.getElementById("ingredient-unit") as HTMLSelectElement)?.value || "",
-    };
   }
 
   async function handleDelIngredient(id: string): Promise<void> {
@@ -139,9 +132,6 @@ export function Ingredients() {
               <th onClick={() => handleSort("quantity")}>
                 Quantidade {sortColumn === "quantity" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
               </th>
-              <th onClick={() => handleSort("unit")}>
-                Unidade {sortColumn === "unit" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
               <th className="static">Ações</th>
             </tr>
           </thead>
@@ -150,8 +140,7 @@ export function Ingredients() {
               <tr key={ingredient.id}>
                 <td>{ingredient.name}</td>
                 <td>{ingredient.price}</td>
-                <td>{ingredient.quantity}</td>
-                <td>{ingredient.unit}</td>
+                <td>{ingredient.quantity}{helpers.convertUnitForDisplay(ingredient.unit)}</td>
                 <Actions
                   handleEdit={() => openEditModal(ingredient)}
                   handleDelete={() => handleDelIngredient(ingredient.id!)}

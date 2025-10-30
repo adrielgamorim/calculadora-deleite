@@ -18,6 +18,7 @@ import { Modal } from "@components/Modal";
 import { useModal } from "@hooks/useModal";
 import { useToastContext } from "@hooks/useToastContext";
 import { Actions } from "@components/Actions";
+import { BundleDetails } from "@components/BundleDetails";
 
 export function Cakes() {
   const [cakes, setCakes] = useState<Cake[]>([]);
@@ -162,23 +163,8 @@ export function Cakes() {
     }
   }
 
-  function getFrameName(frame: Frames): string {
-    switch (frame) {
-      case Frames.frame15:
-        return "15cm";
-      case Frames.frame25:
-        return "25cm";
-      case Frames.frame35:
-        return "35cm";
-      default:
-        return "Desconhecido";
-    }
-  }
-
   function getIngredientOptionsForSelect(): { value: string; label: string }[] {
-    return ingredients
-      .map(ingredient => ({ value: ingredient.id!, label: ingredient.name }))
-      .sort((a, b) => a.label.localeCompare(b.label));
+    return helpers.getIngredientOptionsForSelect(ingredients);
   }
 
   function getBundleOptionsForSelect(): { value: string; label: string }[] {
@@ -244,14 +230,18 @@ export function Cakes() {
             {data.map(cake => (
               <tr key={cake.id}>
                 <td>{cake.name}</td>
-                <td>{getFrameName(cake.frame)}</td>
+                <td>{helpers.getFrameName(cake.frame)}</td>
                 <td>
-                  {cake.hydratedBundles && cake.hydratedBundles.length > 0 ? cake.hydratedBundles.map((hydrated, index) => (
-                    <span key={hydrated.id}>
-                      {hydrated.bundle.name}
-                      {index < cake.hydratedBundles!.length - 1 && Common.tableItemSeparator}
-                    </span>
-                  )) : (
+                  {cake.hydratedBundles && cake.hydratedBundles.length > 0 ? (
+                    cake.hydratedBundles.map(hydrated => (
+                      <BundleDetails
+                        key={hydrated.id}
+                        bundleName={hydrated.bundle.name}
+                        ingredients={hydrated.hydratedQuantities || []}
+                        convertUnitForDisplay={helpers.convertUnitForDisplay}
+                      />
+                    ))
+                  ) : (
                     Common.noTableItemFoundContent
                   )}
                 </td>

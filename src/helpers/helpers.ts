@@ -2,6 +2,7 @@ import { Endpoints } from "@data/Endpoints";
 import type { Bundle } from "@models/Bundle";
 import type { Cake } from "@models/Cake";
 import type { Ingredient } from "@models/Ingredient";
+import { Frames } from "@data/Frames";
 import { getDocuments, getDocumentById } from "@requests/requests";
 
 export const helpers = {
@@ -33,6 +34,43 @@ export const helpers = {
     }
     // Keep other units as-is (g, ml, un)
     return unit;
+  },
+
+  calculateIngredientCost(ingredient: { price: number; quantity: number; unit: string }, usedQuantity: number): number {
+    let quantity: number = ingredient.quantity;
+
+    // Calculate price per unit
+    if (ingredient.unit === "un") {
+      const singleUnitPrice = ingredient.price / quantity;
+      return singleUnitPrice * usedQuantity;
+    }
+
+    // Convert kg/l to g/ml for consistent calculation
+    if (ingredient.unit === "kg" || ingredient.unit === "l") {
+      quantity *= 1000;
+    }
+
+    const pricePerUnit = ingredient.price / quantity;
+    return pricePerUnit * usedQuantity;
+  },
+
+  getFrameName(frame: Frames): string {
+    switch (frame) {
+      case Frames.frame15:
+        return "15cm";
+      case Frames.frame25:
+        return "25cm";
+      case Frames.frame35:
+        return "35cm";
+      default:
+        return "Desconhecido";
+    }
+  },
+
+  getIngredientOptionsForSelect(ingredients: Ingredient[]): { value: string; label: string }[] {
+    return ingredients
+      .map(ingredient => ({ value: ingredient.id!, label: ingredient.name }))
+      .sort((a, b) => a.label.localeCompare(b.label));
   },
 
   async checkIngredientIsUsedInBundles(ingredientId: string): Promise<boolean> {

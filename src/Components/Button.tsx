@@ -10,7 +10,7 @@ export function Button(props: { className?: string, label?: ReactNode, icon?: Re
   return (
     <button className={className} onClick={props.onClick}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-        <span>{props.label || "Click"}</span>
+        <span>{props.label || ""}</span>
         {props.icon && <span style={{ height: "20px" }}>{props.icon}</span>}
       </div>
     </button>

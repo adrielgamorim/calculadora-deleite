@@ -1,10 +1,13 @@
 import useAuth from "@auth/useAuth";
 import { Button } from "@components/Button";
+import { ConfigModal } from "@components/ConfigModal";
+import { useModal } from "@hooks/useModal";
 import { Link, useLocation } from "react-router-dom";
 
 export function Navbar() {
   const { signOut } = useAuth();
   const location = useLocation();
+  const configModal = useModal();
 
   return (
     <nav>
@@ -50,14 +53,15 @@ export function Navbar() {
           className={location.pathname === "/bolos" ? "active" : ""}
         />
       </Link>
-      <Link to="/config">
-        <Button
-          label={"Configurações"}
-          className={location.pathname === "/config" ? "active" : ""}
-        />
-      </Link>
+      
+      <Button
+        label={"Configurações"}
+        onClick={configModal.open}
+      />
 
       <Button label={"Sair"} onClick={() => signOut(true)} />
+
+      <ConfigModal isOpen={configModal.isOpen} onClose={configModal.close} />
     </nav>
   );
 }

@@ -11,12 +11,14 @@ import { getDocuments } from "@requests/requests";
 import { useColumnSort } from "@hooks/useColumnSort";
 import { useColumnVisibility } from "@hooks/useColumnVisibility";
 import { ColumnFilterMenu } from "@components/ColumnFilterMenu";
+import { useToastContext } from "@hooks/useToastContext";
 
 export function DashboardCalculator() {
   const [config, setConfig] = useState<ConfigModel | null>(null);
   const [cakes, setCakes] = useState<Cake[]>([]);
   const [prices, setPrices] = useState<Price[]>([]);
   const { data, sortColumn, sortDirection, handleSort } = useColumnSort<Price>(prices);
+  const toast = useToastContext();
 
   const columns = [
     { key: 'name' as keyof Price, label: 'Nome' },
@@ -55,18 +57,12 @@ export function DashboardCalculator() {
     Promise.all([
       getDocuments<ConfigModel>(Endpoints.config),
       getDocuments<Cake>(Endpoints.cakes)
-    ]).then(([configData, cakesData]) => {
+    ]).then(async ([configData, cakesData]) => {
       setConfig(configData[0] || ((c: ConfigModel) => c));
-      setCakes(cakesData);
+      const hydratedCakes = await helpers.pullCakesWithIngredients(cakesData);
+      setCakes(hydratedCakes);
     });
   }, []);
-
-  useEffect(() => {
-    (async () => {
-      setCakes(await helpers.pullCakesWithIngredients(cakes));
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config]);
 
   useEffect(() => {
     const pricesArray: Price[] = cakes.map(cake => {
@@ -91,9 +87,12 @@ export function DashboardCalculator() {
       const ifoodSellingBasePrice = calculateSellingPrice(calculateIfoodPrice(convertedWithPackaging));
       const ifoodSellingSlicePrice = calculateSellingPrice(calculateIfoodPrice(convertedSliceWithPackaging));
       
+      // Get frame size number only (remove "cm" suffix)
+      const frameSize = helpers.getFrameName(cake.frame).replace('cm', '');
+      
       return {
         id: cake.id!,
-        name: cake.name,
+        name: `${cake.name} - Aro ${frameSize}`,
         base: helpers.humanizePrice(base),
         baseWithPackaging: helpers.humanizePrice(baseWithPackaging),
         baseSlice: helpers.humanizePrice(baseSlice),
@@ -112,29 +111,11 @@ export function DashboardCalculator() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cakes]);
 
-  function calculateIngredientCost(ingredient: { price: number; quantity: number; unit: string }, usedQuantity: number): number {
-    let quantity: number = ingredient.quantity;
-
-    // Calculate price per unit
-    if (ingredient.unit === "un") {
-      const singleUnitPrice = ingredient.price / quantity;
-      return singleUnitPrice * usedQuantity;
-    }
-
-    // Convert kg/l to g/ml for consistent calculation
-    if (ingredient.unit === "kg" || ingredient.unit === "l") {
-      quantity *= 1000;
-    }
-
-    const pricePerUnit = ingredient.price / quantity;
-    return pricePerUnit * usedQuantity;
-  }
-
   function calculateBaseIngredientsPrice(cake: Cake): number {
     if (!cake.hydratedIngredients) return 0;
 
     return cake.hydratedIngredients.reduce((total, item) => {
-      return total + calculateIngredientCost(item.ingredient, item.quantity);
+      return total + helpers.calculateIngredientCost(item.ingredient, item.quantity);
     }, 0);
   }
 
@@ -151,7 +132,7 @@ export function DashboardCalculator() {
     const bundlesPrice: number = cake.hydratedBundles?.reduce((total, cakeBundle) => {
       // Calculate price for each ingredient quantity in this bundle
       const bundleIngredientCost = cakeBundle.hydratedQuantities.reduce((bundleTotal, item) => {
-        return bundleTotal + calculateIngredientCost(item.ingredient, item.quantity);
+        return bundleTotal + helpers.calculateIngredientCost(item.ingredient, item.quantity);
       }, 0);
 
       return total + bundleIngredientCost;
@@ -162,7 +143,7 @@ export function DashboardCalculator() {
 
   function calculatePriceWithPackaging(frame: Frames, price: number, isSlicePackaging = false): number {
     if (!config) {
-      alert("Configurações não carregadas.");
+      toast.error("Configurações não carregadas.");
       return 0;
     }
     if (isSlicePackaging) return price + config.slicePackagingPrice;
@@ -179,7 +160,7 @@ export function DashboardCalculator() {
         priceWithPackaging = price + config.frame35PackagingPrice;
         break;
       default:
-        alert("Tamanho de bolo inválido.");
+        toast.error("Tamanho de bolo inválido.");
         priceWithPackaging = price;
         break;
     }

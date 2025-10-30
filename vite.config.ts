@@ -36,8 +36,8 @@ export default defineConfig({
         name: 'Calculadora Deleite',
         start_url: 'index.html',
         display: 'standalone',
-        theme_color: '#ffffff',
-        background_color: '#000000',
+        theme_color: 'transparent',
+        background_color: 'transparent',
         icons: [
           {
             src: 'logo.png',

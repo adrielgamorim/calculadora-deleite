@@ -12,14 +12,17 @@ interface ToastProps extends ToastType {
   duration?: number;
 }
 
-export function Toast({ id, message, type, onClose, duration = 3000 }: ToastProps) {
+export function Toast({ id, message, type, onClose, duration }: ToastProps) {
+  // Default durations based on type if not provided
+  const defaultDuration = duration || (type === 'error' ? 5000 : 3000);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose(id);
-    }, duration);
+    }, defaultDuration);
 
     return () => clearTimeout(timer);
-  }, [id, duration, onClose]);
+  }, [id, defaultDuration, onClose]);
 
   const icons = {
     success: '✓',

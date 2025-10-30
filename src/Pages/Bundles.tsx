@@ -65,15 +65,10 @@ export function Bundles() {
     formModal.close();
     setEditingItem(null);
     setSelectedIngredientIds([]);
-    // Reset form
-    const form = document.getElementById("bundle-form") as HTMLFormElement;
-    form?.reset();
   }
 
-  async function handleSubmit(): Promise<void> {
-    const name = (document.getElementById("bundle-name") as HTMLInputElement)?.value || "";
-    
-    if (!name) {
+  async function handleSubmit(bundle: Bundle): Promise<void> {
+    if (!bundle.name) {
       toast.error("Por favor, preencha o Nome.");
       return;
     }
@@ -83,7 +78,7 @@ export function Bundles() {
     }
 
     const bundleData: Bundle = {
-      name,
+      name: bundle.name,
       ingredients: selectedIngredientIds,
     };
 
@@ -125,9 +120,7 @@ export function Bundles() {
   }
 
   function getIngredientOptionsForSelect(): { value: string; label: string }[] {
-    return ingredients
-      .map(ingredient => ({ value: ingredient.id!, label: ingredient.name }))
-      .sort((a, b) => a.label.localeCompare(b.label));
+    return helpers.getIngredientOptionsForSelect(ingredients);
   }
 
   function handleOptionsChange(selectedOptions: MultiValue<{ value: string; label: string }>): void {

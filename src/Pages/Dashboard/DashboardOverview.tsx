@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { getDocuments } from "@requests/requests";
 import { Endpoints } from "@data/Endpoints";
 import type { Ingredient } from "@models/Ingredient";
@@ -33,31 +33,13 @@ export function DashboardOverview() {
     });
   }, []);
 
-  function calculateIngredientCost(ingredient: Ingredient, usedQuantity: number): number {
-    let quantity = ingredient.quantity;
-    
-    // Special handling for unit-based ingredients
-    if (ingredient.unit === "un") {
-      const singleUnitPrice = ingredient.price / quantity;
-      return singleUnitPrice * usedQuantity;
-    }
-    
-    // Convert kg/l to g/ml for consistent calculation
-    if (ingredient.unit === "kg" || ingredient.unit === "l") {
-      quantity *= 1000;
-    }
-    
-    const pricePerUnit = ingredient.price / quantity;
-    return pricePerUnit * usedQuantity;
-  }
-
   function calculateCakePrice(cake: Cake): number {
     let basePrice = 0;
 
     // Add direct ingredients
     if (cake.hydratedIngredients) {
       cake.hydratedIngredients.forEach(hydrated => {
-        basePrice += calculateIngredientCost(hydrated.ingredient, hydrated.quantity);
+        basePrice += helpers.calculateIngredientCost(hydrated.ingredient, hydrated.quantity);
       });
     }
 
@@ -65,7 +47,7 @@ export function DashboardOverview() {
     if (cake.hydratedBundles) {
       cake.hydratedBundles.forEach(hydratedBundle => {
         hydratedBundle.hydratedQuantities?.forEach(hydrated => {
-          basePrice += calculateIngredientCost(hydrated.ingredient, hydrated.quantity);
+          basePrice += helpers.calculateIngredientCost(hydrated.ingredient, hydrated.quantity);
         });
       });
     }
@@ -165,28 +147,23 @@ export function DashboardOverview() {
     ];
   }
 
-  function getFrameName(frame: Frames): string {
-    switch (frame) {
-      case Frames.frame15:
-        return "15cm";
-      case Frames.frame25:
-        return "25cm";
-      case Frames.frame35:
-        return "35cm";
-      default:
-        return "Desconhecido";
-    }
-  }
+  // Memoize expensive calculations
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const top3Cakes = useMemo(() => getTop3MostExpensiveCakes(), [cakes]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const mostUsedIngredients = useMemo(() => getMostUsedIngredients(), [cakes, ingredients]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const mostUsedBundles = useMemo(() => getMostUsedBundles(), [cakes, bundles]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const priceRange = useMemo(() => getPriceRange(), [cakes]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const frameDistribution = useMemo(() => getFrameDistribution(), [cakes]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const averagePrice = useMemo(() => getAveragePrice(), [cakes]);
 
   if (loading) {
     return <div className="dashboard-overview"><p>Carregando...</p></div>;
   }
-
-  const top3Cakes = getTop3MostExpensiveCakes();
-  const mostUsedIngredients = getMostUsedIngredients();
-  const mostUsedBundles = getMostUsedBundles();
-  const priceRange = getPriceRange();
-  const frameDistribution = getFrameDistribution();
 
   return (
     <div className="dashboard-overview">
@@ -212,7 +189,7 @@ export function DashboardOverview() {
         <div className="metric-card">
           <div className="metric-icon">💰</div>
           <div className="metric-label">Preço Médio</div>
-          <div className="metric-value">R$ {helpers.humanizePrice(getAveragePrice())}</div>
+          <div className="metric-value">R$ {helpers.humanizePrice(averagePrice)}</div>
         </div>
       </div>
 
@@ -231,7 +208,7 @@ export function DashboardOverview() {
                   <div className="cake-info">
                     <span className="cake-name">{item.cake.name}</span>
                     <span className="cake-details">
-                      {getFrameName(item.cake.frame)} - R$ {helpers.humanizePrice(item.wholePrice)}
+                      {helpers.getFrameName(item.cake.frame)} - R$ {helpers.humanizePrice(item.wholePrice)}
                     </span>
                   </div>
                 </div>

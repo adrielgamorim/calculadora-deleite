@@ -2,7 +2,6 @@ import '@styles/App.css';
 import '@styles/DashboardDropdown.css';
 import Layout from './Layout';
 import { Cakes } from '@pages/Cakes';
-import { Config } from '@pages/Config';
 import { Bundles } from '@pages/Bundles';
 import { Ingredients } from '@pages/Ingredients';
 import { Dashboard } from '@pages/Dashboard/Dashboard';
@@ -23,7 +22,6 @@ function App() {
           <Route path="/ingredientes" element={<Ingredients />} />
           <Route path="/conjuntos" element={<Bundles />} />
           <Route path="/bolos" element={<Cakes />} />
-          <Route path="/config" element={<Config />} />
         </Route>
       </Routes>
     </Router>
