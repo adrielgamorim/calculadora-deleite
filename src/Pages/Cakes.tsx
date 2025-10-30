@@ -8,12 +8,16 @@ import { Button } from "@components/Button";
 import { Endpoints } from "@data/Endpoints";
 import { useEffect, useState } from "react";
 import { CakeForm } from "@components/CakeForm";
-import { useItemForm } from "@hooks/useItemForm";
-import { RiDeleteBin2Line, RiMenuUnfold3Line } from "react-icons/ri";
+import { RiMenuUnfold3Line } from "react-icons/ri";
 import { useColumnSort } from "@hooks/useColumnSort";
-import { getDocuments, addDocument, deleteDocument } from "@requests/requests";
+import { getDocuments, addDocument, deleteDocument, updateDocument } from "@requests/requests";
 import { SearchBar } from "@components/SearchBar";
 import { useSearch } from "@hooks/useSearch";
+import { ConfirmDialog } from "@components/ConfirmDialog";
+import { Modal } from "@components/Modal";
+import { useModal } from "@hooks/useModal";
+import { useToastContext } from "@hooks/useToastContext";
+import { Actions } from "@components/Actions";
 
 export function Cakes() {
   const [cakes, setCakes] = useState<Cake[]>([]);
@@ -23,9 +27,13 @@ export function Cakes() {
   const [selectedBundleIds, setSelectedBundleIds] = useState<string[]>([]);
   const [ingredientQuantities, setIngredientQuantities] = useState<Map<string, number>>(new Map());
   const [bundleIngredientQuantities, setBundleIngredientQuantities] = useState<Map<string, Map<string, number>>>(new Map());
-  const { showAddItemMenu, setShowAddItemMenu } = useItemForm(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<Cake | null>(null);
   const { searchTerm, setSearchTerm, filteredData } = useSearch(cakes, ['name', 'frame']);
   const { data, sortColumn, sortDirection, handleSort } = useColumnSort<Cake>(filteredData);
+  const confirmDelete = useModal();
+  const formModal = useModal();
+  const toast = useToastContext();
 
   useEffect(() => {
     Promise.all([
@@ -48,27 +56,68 @@ export function Cakes() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [bundles]);
 
-  async function handleAddCake(): Promise<void> {
+  function openAddModal(): void {
+    setEditingItem(null);
+    setSelectedIngredientIds([]);
+    setSelectedBundleIds([]);
+    setIngredientQuantities(new Map());
+    setBundleIngredientQuantities(new Map());
+    formModal.open();
+  }
+
+  function openEditModal(cake: Cake): void {
+    setEditingItem(cake);
+    
+    // Reconstruct direct ingredients state
+    const ingIds = cake.ingredients?.map(i => i.ingredientId) || [];
+    const ingQty = new Map(cake.ingredients?.map(i => [i.ingredientId, i.quantity]) || []);
+    
+    // Reconstruct bundles state
+    const bundleIds = cake.bundles?.map(b => b.id) || [];
+    const bundleQty = new Map(
+      cake.bundles?.map(b => [
+        b.id,
+        new Map(b.ingredientQuantities.map(iq => [iq.ingredientId, iq.quantity]))
+      ]) || []
+    );
+    
+    setSelectedIngredientIds(ingIds);
+    setIngredientQuantities(ingQty);
+    setSelectedBundleIds(bundleIds);
+    setBundleIngredientQuantities(bundleQty);
+    formModal.open();
+  }
+
+  function closeFormModal(): void {
+    setEditingItem(null);
+    setSelectedIngredientIds([]);
+    setSelectedBundleIds([]);
+    setIngredientQuantities(new Map());
+    setBundleIngredientQuantities(new Map());
+    formModal.close();
+  }
+
+  async function handleSubmit(): Promise<void> {
     const name = (document.getElementById("cake-name") as HTMLInputElement)?.value || "";
     const frame = (document.getElementById("cake-frame") as HTMLSelectElement)?.value as Frames;
 
     if (!name) {
-      alert("Por favor, preencha o campo Nome.");
+      toast.error("Por favor, preencha o campo Nome.");
       return;
     }
 
     if (!frame) {
-      alert("Por favor, selecione o tamanho do Bolo.");
+      toast.error("Por favor, selecione o tamanho do Bolo.");
       return;
     }
 
     if (selectedIngredientIds.length + selectedBundleIds.length === 0) {
-      alert("Por favor, selecione pelo menos um ingrediente ou conjunto.");
+      toast.error("Por favor, selecione pelo menos um ingrediente ou conjunto.");
       return;
     }
 
     // Build complete cake structure
-    const cake: Cake = {
+    const cakeData: Cake = {
       name,
       frame,
       ingredients: selectedIngredientIds.map(ingredientId => ({
@@ -84,28 +133,32 @@ export function Cakes() {
       }))
     };
 
-    await addDocument<Cake>(Endpoints.cakes, cake);
+    if (editingItem?.id) {
+      await updateDocument<Cake>(Endpoints.cakes, editingItem.id, cakeData);
+      toast.success("Bolo atualizado com sucesso!");
+    } else {
+      await addDocument<Cake>(Endpoints.cakes, cakeData);
+      toast.success("Bolo adicionado com sucesso!");
+    }
+
     const freshCakes = await getDocuments<Cake>(Endpoints.cakes);
     setCakes(await helpers.pullCakesWithIngredients(freshCakes));
-    
-    // Reset form state
-    resetForm();
-  }
-
-  function resetForm(): void {
-    setSelectedIngredientIds([]);
-    setSelectedBundleIds([]);
-    setIngredientQuantities(new Map());
-    setBundleIngredientQuantities(new Map());
-    (document.getElementById("form") as HTMLFormElement)?.reset();
-    setShowAddItemMenu(false);
+    closeFormModal();
   }
 
   async function handleDelCake(id: string): Promise<void> {
-    if (window.confirm("Tem certeza que deseja remover este bolo?")) {
-      await deleteDocument(Endpoints.cakes, id);
+    setSelectedId(id);
+    confirmDelete.open();
+  }
+
+  async function handleConfirmDelete(): Promise<void> {
+    if (selectedId) {
+      await deleteDocument(Endpoints.cakes, selectedId);
       const cakes = await getDocuments<Cake>(Endpoints.cakes);
       setCakes(await helpers.pullCakesWithIngredients(cakes));
+      toast.success("Bolo removido com sucesso!");
+      confirmDelete.close();
+      setSelectedId(null);
     }
   }
 
@@ -135,26 +188,36 @@ export function Cakes() {
   }
 
   return (
-    <div onClick={(e) => { if (e.target === e.currentTarget) setShowAddItemMenu(false); }}>
+    <>
       <h1>Bolos</h1>
 
-      <Button label={showAddItemMenu ? "Fechar menu" : "Adicionar Bolo"} icon={!showAddItemMenu && <RiMenuUnfold3Line size={20} />} onClick={() => setShowAddItemMenu(prev => !prev)} />
-      {<CakeForm
-        handleSubmit={handleAddCake}
-        handleCloseMenu={resetForm}
-        getIngredientOptionsForSelect={getIngredientOptionsForSelect}
-        getBundleOptionsForSelect={getBundleOptionsForSelect}
-        ingredients={ingredients}
-        bundles={bundles}
-        selectedIngredientIds={selectedIngredientIds}
-        setSelectedIngredientIds={setSelectedIngredientIds}
-        selectedBundleIds={selectedBundleIds}
-        setSelectedBundleIds={setSelectedBundleIds}
-        ingredientQuantities={ingredientQuantities}
-        setIngredientQuantities={setIngredientQuantities}
-        bundleIngredientQuantities={bundleIngredientQuantities}
-        setBundleIngredientQuantities={setBundleIngredientQuantities}
-      />}
+      <Button label="Adicionar Bolo" icon={<RiMenuUnfold3Line size={20} />} onClick={openAddModal} />
+
+      <Modal
+        isOpen={formModal.isOpen}
+        onClose={closeFormModal}
+        title={editingItem ? "Editar Bolo" : "Adicionar Bolo"}
+        size="medium"
+      >
+        <CakeForm
+          initialValues={editingItem || undefined}
+          onSubmit={handleSubmit}
+          onCancel={closeFormModal}
+          isEditing={!!editingItem}
+          getIngredientOptionsForSelect={getIngredientOptionsForSelect}
+          getBundleOptionsForSelect={getBundleOptionsForSelect}
+          ingredients={ingredients}
+          bundles={bundles}
+          selectedIngredientIds={selectedIngredientIds}
+          setSelectedIngredientIds={setSelectedIngredientIds}
+          selectedBundleIds={selectedBundleIds}
+          setSelectedBundleIds={setSelectedBundleIds}
+          ingredientQuantities={ingredientQuantities}
+          setIngredientQuantities={setIngredientQuantities}
+          bundleIngredientQuantities={bundleIngredientQuantities}
+          setBundleIngredientQuantities={setBundleIngredientQuantities}
+        />
+      </Modal>
 
       <SearchBar 
         value={searchTerm} 
@@ -202,12 +265,26 @@ export function Cakes() {
                     Common.noTableItemFoundContent
                   )}
                 </td>
-                <td><Button label={<RiDeleteBin2Line color="red" />} onClick={() => handleDelCake(cake.id!)} /></td>
+                <Actions
+                  handleEdit={() => openEditModal(cake)}
+                  handleDelete={() => handleDelCake(cake.id!)}
+                />
               </tr>
             ))}
           </tbody>
         </table>
       )}
-    </div>
+
+      <ConfirmDialog
+        isOpen={confirmDelete.isOpen}
+        title="Remover Bolo"
+        message="Tem certeza que deseja remover este bolo?"
+        confirmText="Remover"
+        cancelText="Cancelar"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={confirmDelete.close}
+      />
+    </>
   );
 }

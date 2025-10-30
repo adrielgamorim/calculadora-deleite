@@ -3,6 +3,7 @@ import type { Config as ConfigModel } from "@models/Config";
 import { getDocuments, addDocument, updateDocument } from "@requests/requests";
 import { Endpoints } from "@data/Endpoints";
 import { helpers } from "@helpers/helpers";
+import { useToastContext } from "@hooks/useToastContext";
 
 export function Config() {
   const [config, setConfig] = useState<ConfigModel>({
@@ -13,7 +14,9 @@ export function Config() {
     frame35PackagingPrice: 0.0,
     slicePackagingPrice: 0.0,
     ifoodTax: 0.0,
+    roundingStrategy: "none",
   });
+  const toast = useToastContext();
 
   useEffect(() => {
     Promise.resolve(
@@ -30,6 +33,7 @@ export function Config() {
       frame35PackagingPrice: helpers.parseDecimal((document.getElementById("frame35-packaging-price") as HTMLInputElement).value),
       slicePackagingPrice: helpers.parseDecimal((document.getElementById("slice-packaging-price") as HTMLInputElement).value),
       ifoodTax: helpers.parseDecimal((document.getElementById("ifood-fee") as HTMLInputElement).value),
+      roundingStrategy: (document.getElementById("rounding-strategy") as HTMLSelectElement).value as ConfigModel["roundingStrategy"],
     };
   }
 
@@ -47,7 +51,7 @@ export function Config() {
       await addDocument<ConfigModel>(Endpoints.config, newConfig);
     }
     setConfig(newConfig);
-    alert("Configurações salvas com sucesso!");
+    toast.success("Configurações salvas com sucesso!");
   }
 
   return (
@@ -72,6 +76,21 @@ export function Config() {
             name="ifood-fee"
             placeholder={config.ifoodTax.toString()}
           />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="rounding-strategy">Estratégia de arredondamento: </label>
+          <select
+            id="rounding-strategy"
+            name="rounding-strategy"
+            value={config.roundingStrategy}
+            onChange={(e) => setConfig({ ...config, roundingStrategy: e.target.value as ConfigModel["roundingStrategy"] })}
+          >
+            <option value="none">Nenhum</option>
+            <option value="to_90">Arredondar para .90</option>
+            <option value="to_50">Arredondar para .50</option>
+            <option value="to_integer">Arredondar para inteiro</option>
+          </select>
         </div>
 
         <div className="form-group">

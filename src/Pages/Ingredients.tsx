@@ -5,19 +5,26 @@ import { Button } from "@components/Button";
 import { Endpoints } from "@data/Endpoints";
 import { useEffect, useState } from "react";
 import { Actions } from "@components/Actions";
-import { useItemForm } from "@hooks/useItemForm";
 import { useColumnSort } from "@hooks/useColumnSort";
 import { IngredientForm } from "@components/IngredientForm";
 import { getDocuments, addDocument, deleteDocument, updateDocument } from "@requests/requests";
 import { RiMenuUnfold3Line } from "react-icons/ri";
 import { SearchBar } from "@components/SearchBar";
 import { useSearch } from "@hooks/useSearch";
+import { ConfirmDialog } from "@components/ConfirmDialog";
+import { Modal } from "@components/Modal";
+import { useModal } from "@hooks/useModal";
+import { useToastContext } from "@hooks/useToastContext";
 
 export function Ingredients() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const {showAddItemMenu, setShowAddItemMenu} = useItemForm(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<Ingredient | null>(null);
   const { searchTerm, setSearchTerm, filteredData } = useSearch(ingredients, ['name', 'unit']);
   const {data, sortColumn, sortDirection, handleSort} = useColumnSort<Ingredient>(filteredData);
+  const confirmDelete = useModal();
+  const formModal = useModal();
+  const toast = useToastContext();
 
   useEffect(() => {
     Promise.resolve(
@@ -25,63 +32,93 @@ export function Ingredients() {
     ).then(data => setIngredients(data));
   }, []);
 
-  async function handleAddIngredient(ingredient: Ingredient): Promise<void> {
-    if (!ingredient.name || !ingredient.price || !ingredient.quantity || !ingredient.unit) {
-      alert("Por favor, preencha os campos obrigatórios.");
-      return;
-    }
-    if (ingredients.some(i => i.name === ingredient.name)) {
-      alert("Este ingrediente já está na lista.");
-      return;
-    }
-    await addDocument<Ingredient>(Endpoints.ingredients, ingredient);
-    (document.getElementById("form") as HTMLFormElement)?.reset();
-    setShowAddItemMenu(false);
-    setIngredients(await getDocuments<Ingredient>(Endpoints.ingredients));
+  function openAddModal() {
+    setEditingItem(null);
+    formModal.open();
   }
 
-  function getIngredientValuesToAdd(): Ingredient {
+  function openEditModal(ingredient: Ingredient) {
+    setEditingItem(ingredient);
+    formModal.open();
+  }
+
+  function closeFormModal() {
+    formModal.close();
+    setEditingItem(null);
+    // Reset form
+    const form = document.getElementById("ingredient-form") as HTMLFormElement;
+    form?.reset();
+  }
+
+  async function handleSubmit(): Promise<void> {
+    const ingredient = getIngredientValuesFromForm();
+    
+    if (!ingredient.name || !ingredient.price || !ingredient.quantity || !ingredient.unit) {
+      toast.error("Por favor, preencha os campos obrigatórios.");
+      return;
+    }
+
+    if (editingItem) {
+      // Update existing ingredient
+      await updateDocument<Ingredient>(Endpoints.ingredients, editingItem.id!, ingredient);
+      setIngredients(await getDocuments<Ingredient>(Endpoints.ingredients));
+      toast.success("Ingrediente atualizado com sucesso!");
+    } else {
+      // Add new ingredient
+      if (ingredients.some(i => i.name === ingredient.name)) {
+        toast.error("Este ingrediente já está na lista.");
+        return;
+      }
+      await addDocument<Ingredient>(Endpoints.ingredients, ingredient);
+      setIngredients(await getDocuments<Ingredient>(Endpoints.ingredients));
+      toast.success("Ingrediente adicionado com sucesso!");
+    }
+    
+    closeFormModal();
+  }
+
+  function getIngredientValuesFromForm(): Ingredient {
     return {
       name: (document.getElementById("ingredient-name") as HTMLInputElement)?.value || "",
       price: helpers.parseDecimal((document.getElementById("ingredient-price") as HTMLInputElement)?.value) || 0,
       quantity: helpers.parseDecimal((document.getElementById("ingredient-quantity") as HTMLInputElement)?.value) || 0,
-      unit: (document.getElementById("ingredient-unit") as HTMLInputElement)?.value || "",
+      unit: (document.getElementById("ingredient-unit") as HTMLSelectElement)?.value || "",
     };
-  }
-
-  async function handleEditIngredient(id: string): Promise<void> {
-    const ingredientToEdit = ingredients.find(ingredient => ingredient.id === id);
-    const updatedIngredient = helpers.promptEditIngredient(ingredientToEdit!);
-    if (updatedIngredient === ingredientToEdit) {
-      return;
-    }
-
-    await updateDocument<Ingredient>(Endpoints.ingredients, id, updatedIngredient);
-    setIngredients(await getDocuments<Ingredient>(Endpoints.ingredients));
   }
 
   async function handleDelIngredient(id: string): Promise<void> {
     if (await helpers.checkIngredientIsUsedInBundles(id)) {
-      alert("Este ingrediente está sendo usado em um conjunto e não pode ser removido.");
+      toast.error("Este ingrediente está sendo usado em um conjunto e não pode ser removido.");
       return;
     }
     if (await helpers.checkIngredientIsUsedInCakes(id)) {
-      alert("Este ingrediente está sendo usado em um bolo e não pode ser removido.");
+      toast.error("Este ingrediente está sendo usado em um bolo e não pode ser removido.");
       return;
     }
 
-    if (window.confirm("Tem certeza que deseja remover este ingrediente?")) {
-      await deleteDocument(Endpoints.ingredients, id);
+    setSelectedId(id);
+    confirmDelete.open();
+  }
+
+  async function handleConfirmDelete(): Promise<void> {
+    if (selectedId) {
+      await deleteDocument(Endpoints.ingredients, selectedId);
       setIngredients(await getDocuments<Ingredient>(Endpoints.ingredients));
+      toast.success("Ingrediente removido com sucesso!");
+      confirmDelete.close();
+      setSelectedId(null);
     }
   }
 
   return (
-    <div onClick={(e) => { if (e.target === e.currentTarget) setShowAddItemMenu(false); }}>
+    <div>
       <h1>Ingredientes</h1>
 
-      <Button label={showAddItemMenu ? "Fechar menu" : "Adicionar Ingrediente"} icon={!showAddItemMenu && <RiMenuUnfold3Line size={20} />} onClick={() => setShowAddItemMenu(prev => !prev)} />
-      {<IngredientForm handleSubmit={() => handleAddIngredient(getIngredientValuesToAdd())} handleCloseMenu={() => setShowAddItemMenu(false)} />}
+      <Button 
+        label="Adicionar Ingrediente" 
+        icon={<RiMenuUnfold3Line size={20} />} 
+        onClick={openAddModal} 
+      />
 
       <SearchBar 
         value={searchTerm} 
@@ -116,7 +153,7 @@ export function Ingredients() {
                 <td>{ingredient.quantity}</td>
                 <td>{ingredient.unit}</td>
                 <Actions
-                  handleEdit={() => handleEditIngredient(ingredient.id!)}
+                  handleEdit={() => openEditModal(ingredient)}
                   handleDelete={() => handleDelIngredient(ingredient.id!)}
                 />
               </tr>
@@ -124,6 +161,31 @@ export function Ingredients() {
           </tbody>
         </table>
       )}
+
+      <Modal 
+        isOpen={formModal.isOpen} 
+        onClose={closeFormModal}
+        title={editingItem ? "Editar Ingrediente" : "Adicionar Ingrediente"}
+        size="small"
+      >
+        <IngredientForm
+          initialValues={editingItem}
+          onSubmit={handleSubmit}
+          onCancel={closeFormModal}
+          isEditing={!!editingItem}
+        />
+      </Modal>
+
+      <ConfirmDialog
+        isOpen={confirmDelete.isOpen}
+        title="Remover Ingrediente"
+        message="Tem certeza que deseja remover este ingrediente?"
+        confirmText="Remover"
+        cancelText="Cancelar"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={confirmDelete.close}
+      />
     </div>
   );
 }

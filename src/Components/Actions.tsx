@@ -5,8 +5,8 @@ import { RiMenuUnfold3Line } from "react-icons/ri";
 import "@styles/ActionsMenu.css";
 
 type ActionProps = {
-    handleEdit?: () => Promise<void>;
-    handleDelete?: () => Promise<void>;
+    handleEdit?: () => void | Promise<void>;
+    handleDelete?: () => void | Promise<void>;
 };
 
 export function Actions({ handleEdit, handleDelete }: ActionProps) {

@@ -1,15 +1,16 @@
 import "@styles/AddItemForm.css";
 import { Frames } from "@data/Frames";
-import { SlClose } from "react-icons/sl";
-import { Button } from "@components/Button";
 import Select, { type MultiValue } from 'react-select';
 import type { Ingredient } from "@models/Ingredient";
 import type { Bundle } from "@models/Bundle";
+import type { Cake } from "@models/Cake";
 import { helpers } from "@helpers/helpers";
+import { useEffect } from "react";
 
 type CakeFormProps = {
-  handleSubmit: () => Promise<void>;
-  handleCloseMenu: () => void;
+  initialValues?: Cake | null;
+  onSubmit: () => Promise<void>;
+  onCancel: () => void;
   getIngredientOptionsForSelect: () => { label: string; value: string }[];
   getBundleOptionsForSelect: () => { label: string; value: string }[];
   ingredients: Ingredient[];
@@ -22,11 +23,13 @@ type CakeFormProps = {
   setIngredientQuantities: (quantities: Map<string, number>) => void;
   bundleIngredientQuantities: Map<string, Map<string, number>>;
   setBundleIngredientQuantities: (quantities: Map<string, Map<string, number>>) => void;
+  isEditing?: boolean;
 };
 
 export function CakeForm({
-  handleSubmit,
-  handleCloseMenu,
+  initialValues,
+  onSubmit,
+  onCancel,
   getIngredientOptionsForSelect,
   getBundleOptionsForSelect,
   ingredients,
@@ -39,7 +42,18 @@ export function CakeForm({
   setIngredientQuantities,
   bundleIngredientQuantities,
   setBundleIngredientQuantities,
+  isEditing = false
 }: CakeFormProps) {
+
+  useEffect(() => {
+    if (initialValues) {
+      const form = document.getElementById("cake-form") as HTMLFormElement;
+      if (form) {
+        (form.elements.namedItem("cake-name") as HTMLInputElement).value = initialValues.name || "";
+        (form.elements.namedItem("cake-frame") as HTMLSelectElement).value = initialValues.frame.toString() || "";
+      }
+    }
+  }, [initialValues]);
   
   function handleIngredientSelection(selectedOptions: MultiValue<{ value: string; label: string }>): void {
     const ids = selectedOptions ? selectedOptions.map(option => option.value) : [];
@@ -103,20 +117,15 @@ export function CakeForm({
   }
 
   return (
-    <form id="form">
-      <div className="form-header">
-        <h3 className="form-title">Adicionar Bolo</h3>
-        <Button className="form-close-button" label={<SlClose size={24} />} onClick={handleCloseMenu} />
-      </div>
-      
+    <form id="cake-form" className="modal-form">
       <div className="form-group form-name">
         <label htmlFor="cake-name">Nome*: </label>
-        <input id="cake-name" type="text" />
+        <input id="cake-name" name="cake-name" type="text" />
       </div>
       
       <div className="form-group">
         <label htmlFor="cake-frame">Tamanho*: </label>
-        <select id="cake-frame" defaultValue="">
+        <select id="cake-frame" name="cake-frame" defaultValue="">
           <option value="" disabled>Selecione</option>
           <option value={Frames.frame15}>15cm</option>
           <option value={Frames.frame25}>25cm</option>
@@ -133,7 +142,9 @@ export function CakeForm({
           onChange={handleIngredientSelection} 
           isMulti 
           id="cake-ingredients" 
-          placeholder="Selecione ingredientes" 
+          placeholder="Selecione ingredientes"
+          menuPortalTarget={document.body}
+          styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
         />
       </div>
 
@@ -141,22 +152,25 @@ export function CakeForm({
       {selectedIngredientIds.length > 0 && (
         <div className="form-group">
           <label>Quantidades (g, ml, ou un):</label>
-          {selectedIngredientIds.map(ingredientId => {
-            const ingredient = ingredients.find(i => i.id === ingredientId);
-            return (
-              <div key={ingredientId} style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <label style={{ flex: 1 }}>{ingredient?.name}:</label>
-                <input 
-                  type="number" 
-                  min="0"
-                  value={ingredientQuantities.get(ingredientId)}
-                  onChange={(e) => updateIngredientQuantity(ingredientId, parseFloat(e.target.value))}
-                  style={{ width: '120px' }}
-                />
-                <span>{helpers.convertUnitForDisplay(ingredient?.unit || '')}</span>
-              </div>
-            );
-          })}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+            {selectedIngredientIds.map(ingredientId => {
+              const ingredient = ingredients.find(i => i.id === ingredientId);
+              return (
+                <div key={ingredientId} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ flex: 1, fontSize: '0.875rem' }}>{ingredient?.name}:</label>
+                  <input
+                    type="number" 
+                    min="0"
+                    step="0.01"
+                    value={ingredientQuantities.get(ingredientId)}
+                    onChange={(e) => updateIngredientQuantity(ingredientId, parseFloat(e.target.value))}
+                    style={{ width: '120px', padding: '0.375rem', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                  />
+                  <span style={{ width: '50px', fontSize: '0.875rem' }}>{helpers.convertUnitForDisplay(ingredient?.unit || '')}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -169,7 +183,9 @@ export function CakeForm({
           onChange={handleBundleSelection} 
           isMulti 
           id="cake-bundles" 
-          placeholder="Selecione conjuntos" 
+          placeholder="Selecione conjuntos"
+          menuPortalTarget={document.body}
+          styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
         />
       </div>
 
@@ -177,33 +193,45 @@ export function CakeForm({
       {selectedBundleIds.length > 0 && (
         <div className="form-group">
           <label>Quantidades dos Conjuntos:</label>
-          {selectedBundleIds.map(bundleId => {
-            const bundle = bundles.find(b => b.id === bundleId);
-            if (!bundle?.hydratedIngredients) return null;
-            
-            return (
-              <div key={bundleId} style={{ marginBottom: '16px', padding: '12px', border: '1px solid #ddd', borderRadius: '4px' }}>
-                <strong>{bundle.name}:</strong>
-                {bundle.hydratedIngredients.map(ingredient => (
-                  <div key={ingredient.id} style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '16px' }}>
-                    <label style={{ flex: 1 }}>{ingredient.name}:</label>
-                    <input 
-                      type="number" 
-                      min="0"
-                      value={bundleIngredientQuantities.get(bundleId)?.get(ingredient.id!)}
-                      onChange={(e) => updateBundleIngredientQuantity(bundleId, ingredient.id!, parseFloat(e.target.value))}
-                      style={{ width: '120px' }}
-                    />
-                    <span>{helpers.convertUnitForDisplay(ingredient.unit)}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
+            {selectedBundleIds.map(bundleId => {
+              const bundle = bundles.find(b => b.id === bundleId);
+              if (!bundle?.hydratedIngredients) return null;
+              
+              return (
+                <div key={bundleId} style={{ padding: '12px', border: '1px solid #e5e7eb', borderRadius: '6px', backgroundColor: '#f9fafb' }}>
+                  <strong style={{ fontSize: '0.875rem', color: '#374151' }}>{bundle.name}:</strong>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                    {bundle.hydratedIngredients.map(ingredient => (
+                      <div key={ingredient.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '12px' }}>
+                        <label style={{ flex: 1, fontSize: '0.875rem' }}>{ingredient.name}:</label>
+                        <input 
+                          type="number" 
+                          min="0"
+                          step="0.01"
+                          value={bundleIngredientQuantities.get(bundleId)?.get(ingredient.id!)}
+                          onChange={(e) => updateBundleIngredientQuantity(bundleId, ingredient.id!, parseFloat(e.target.value))}
+                          style={{ width: '120px', padding: '0.375rem', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                        />
+                        <span style={{ width: '50px', fontSize: '0.875rem' }}>{helpers.convertUnitForDisplay(ingredient.unit)}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            );
-          })}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      <Button label="Adicionar Bolo" onClick={handleSubmit} />
+      <div className="modal-form-buttons">
+        <button type="button" className="button-secondary" onClick={onCancel}>
+          Cancelar
+        </button>
+        <button type="button" className="button-primary" onClick={onSubmit}>
+          {isEditing ? "Salvar Alterações" : "Adicionar Bolo"}
+        </button>
+      </div>
     </form>
   );
 }

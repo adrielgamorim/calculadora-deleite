@@ -1,5 +1,7 @@
 import type { Base } from "@models/Base";
 
+export type RoundingStrategy = "none" | "to_90" | "to_50" | "to_integer";
+
 export interface Config extends Base {
     conversionRate: number;
     frame15PackagingPrice: number;
@@ -7,4 +9,5 @@ export interface Config extends Base {
     frame35PackagingPrice: number;
     slicePackagingPrice: number;
     ifoodTax: number;
+    roundingStrategy: RoundingStrategy;
 }

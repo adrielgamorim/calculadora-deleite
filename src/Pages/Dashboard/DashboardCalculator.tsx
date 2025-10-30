@@ -34,8 +34,21 @@ export function DashboardCalculator() {
     { key: 'ifoodSellingSlicePrice' as keyof Price, label: 'Preço Fatia Ifood' },
   ];
 
+  // Columns visible by default (hide intermediate calculation columns)
+  const defaultVisibleColumns = [
+    'name',
+    'base',
+    'baseSlice',
+    'converted',
+    'convertedSlice',
+    'sellingBasePrice',
+    'sellingSlicePrice',
+    'ifoodSellingBasePrice',
+    'ifoodSellingSlicePrice'
+  ];
+
   const { visibleColumns, toggleColumn, isColumnVisible } = useColumnVisibility(
-    columns.map(c => c.key as string)
+    defaultVisibleColumns
   );
 
   useEffect(() => {
@@ -58,28 +71,41 @@ export function DashboardCalculator() {
   useEffect(() => {
     const pricesArray: Price[] = cakes.map(cake => {
       const base = calculateBaseCakePrice(cake);
-      const baseWithPackaging = helpers.humanizePrice(calculatePriceWithPackaging(cake.frame, base));
+      const baseWithPackaging = calculatePriceWithPackaging(cake.frame, base);
       const baseSlice = calculateCakeSlicePrice(cake.frame, base);
-      const baseSliceWithPackaging = helpers.humanizePrice(calculatePriceWithPackaging(cake.frame, baseSlice, true));
-      const converted = helpers.humanizePrice(calculateConvertedPrice(base));
-      const convertedWithPackaging = helpers.humanizePrice(calculateConvertedPrice(calculatePriceWithPackaging(cake.frame, base)));
-      const convertedSlice = helpers.humanizePrice(calculateConvertedPrice(baseSlice));
-      const convertedSliceWithPackaging = helpers.humanizePrice(calculateConvertedPrice(calculatePriceWithPackaging(cake.frame, baseSlice, true)));
+      const baseSliceWithPackaging = calculatePriceWithPackaging(cake.frame, baseSlice, true);
+      
+      // Convert base prices (without packaging)
+      const converted = calculateConvertedPrice(base);
+      const convertedSlice = calculateConvertedPrice(baseSlice);
+      
+      // Add packaging AFTER conversion (no profit on packaging)
+      const convertedWithPackaging = calculatePriceWithPackaging(cake.frame, converted);
+      const convertedSliceWithPackaging = calculatePriceWithPackaging(cake.frame, convertedSlice, true);
+      
+      // Calculate selling prices (with rounding)
+      const sellingBasePrice = calculateSellingPrice(convertedWithPackaging);
+      const sellingSlicePrice = calculateSellingPrice(convertedSliceWithPackaging);
+      
+      // Calculate Ifood prices: apply tax first, then round
+      const ifoodSellingBasePrice = calculateSellingPrice(calculateIfoodPrice(convertedWithPackaging));
+      const ifoodSellingSlicePrice = calculateSellingPrice(calculateIfoodPrice(convertedSliceWithPackaging));
+      
       return {
         id: cake.id!,
         name: cake.name,
         base: helpers.humanizePrice(base),
-        baseWithPackaging,
+        baseWithPackaging: helpers.humanizePrice(baseWithPackaging),
         baseSlice: helpers.humanizePrice(baseSlice),
-        baseSliceWithPackaging,
-        converted,
-        convertedWithPackaging,
-        convertedSlice,
-        convertedSliceWithPackaging,
-        sellingBasePrice: '',
-        sellingSlicePrice: '',
-        ifoodSellingBasePrice: '',
-        ifoodSellingSlicePrice: ''
+        baseSliceWithPackaging: helpers.humanizePrice(baseSliceWithPackaging),
+        converted: helpers.humanizePrice(converted),
+        convertedWithPackaging: helpers.humanizePrice(convertedWithPackaging),
+        convertedSlice: helpers.humanizePrice(convertedSlice),
+        convertedSliceWithPackaging: helpers.humanizePrice(convertedSliceWithPackaging),
+        sellingBasePrice: helpers.humanizePrice(sellingBasePrice),
+        sellingSlicePrice: helpers.humanizePrice(sellingSlicePrice),
+        ifoodSellingBasePrice: helpers.humanizePrice(ifoodSellingBasePrice),
+        ifoodSellingSlicePrice: helpers.humanizePrice(ifoodSellingSlicePrice)
       };
     });
     setPrices(pricesArray);
@@ -164,9 +190,48 @@ export function DashboardCalculator() {
     return price / (1 - ((100 - config!.conversionRate) / 100));
   }
 
-  // function calculateIfoodPrice(price: number): number {
-  //   return price / (1 - (config!.ifoodTax / 100));
-  // }
+  function calculateSellingPrice(convertedWithPackaging: number): number {
+    if (!config || config.roundingStrategy === "none") {
+      return convertedWithPackaging;
+    }
+
+    const integerPart = Math.floor(convertedWithPackaging);
+
+    if (config.roundingStrategy === "to_90") {
+      // Round to nearest .90
+      const previousTarget = integerPart - 0.10;
+      const nextTarget = integerPart + 0.90;
+      
+      const distanceToPrevious = Math.abs(convertedWithPackaging - previousTarget);
+      const distanceToNext = Math.abs(convertedWithPackaging - nextTarget);
+      
+      return distanceToPrevious < distanceToNext ? previousTarget : nextTarget;
+      
+    } else if (config.roundingStrategy === "to_50") {
+      // Round to nearest .50
+      const currentTarget = integerPart + 0.50;
+      const nextTarget = integerPart + 1.50;
+      
+      const distanceToCurrent = Math.abs(convertedWithPackaging - currentTarget);
+      const distanceToNext = Math.abs(convertedWithPackaging - nextTarget);
+      
+      return distanceToCurrent < distanceToNext ? currentTarget : nextTarget;
+      
+    } else if (config.roundingStrategy === "to_integer") {
+      // Round to nearest integer
+      return Math.round(convertedWithPackaging);
+    }
+
+    return convertedWithPackaging;
+  }
+
+  function calculateIfoodPrice(sellingPrice: number): number {
+    if (!config) {
+      return sellingPrice;
+    }
+    // Apply Ifood tax and round up to nearest cent
+    return helpers.ceilDecimal(sellingPrice * (1 + config.ifoodTax / 100));
+  }
 
   function calculateCakeSlicePrice(frame: Frames, price: number): number {
     const sliceNumber = getCakeSliceNumber(frame);

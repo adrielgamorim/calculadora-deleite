@@ -5,6 +5,7 @@ import { Footer } from "@components/Footer";
 import { Navbar } from "@components/Navbar";
 import { Loading } from "@components/Loading";
 import { SignInWithGoogleButton } from "@components/SignInWithGoogleButton";
+import { ToastProvider } from "@contexts/ToastContext";
 
 export function Layout() {
   const { user, loading, signInWithGoogle, signOut } = useAuth();
@@ -17,7 +18,7 @@ export function Layout() {
   const userIsAuthorized = user?.email ? whitelist.includes(user.email) : false;
 
   return (
-    <>
+    <ToastProvider>
       {user ? (
         userIsAuthorized ? (
           <>
@@ -47,7 +48,7 @@ export function Layout() {
         </div>
       )}
       <Footer />
-    </>
+    </ToastProvider>
   );
 }
 

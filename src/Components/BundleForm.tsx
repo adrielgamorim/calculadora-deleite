@@ -1,39 +1,63 @@
 import "@styles/AddItemForm.css";
-import { SlClose } from "react-icons/sl";
-import { Button } from "@components/Button";
+import type { Bundle } from "@models/Bundle";
 import Select, { type MultiValue } from 'react-select';
+import { useEffect } from "react";
 
 type BundleFormProps = {
-    handleSubmit: () => Promise<void>;
-    handleCloseMenu: () => void;
+    initialValues?: Bundle | null;
+    onSubmit: () => Promise<void>;
+    onCancel: () => void;
     handleOptionsChange: (selectedOptions: MultiValue<{ value: string; label: string }>) => void;
     getIngredientOptionsForSelect: () => { label: string; value: string }[];
     selectedIngredientIds: string[];
+    isEditing?: boolean;
 };
 
-export function BundleForm({ handleSubmit, handleCloseMenu, handleOptionsChange, getIngredientOptionsForSelect, selectedIngredientIds }: BundleFormProps) {
+export function BundleForm({ 
+    initialValues, 
+    onSubmit, 
+    onCancel, 
+    handleOptionsChange, 
+    getIngredientOptionsForSelect, 
+    selectedIngredientIds,
+    isEditing = false 
+}: BundleFormProps) {
+    useEffect(() => {
+        if (initialValues) {
+            const form = document.getElementById("bundle-form") as HTMLFormElement;
+            if (form) {
+                (form.elements.namedItem("bundle-name") as HTMLInputElement).value = initialValues.name || "";
+            }
+        }
+    }, [initialValues]);
+
     return (
-        <form id="form">
-            <div className="form-header">
-                <h3 className="form-title">Adicionar Conjunto</h3>
-                <Button className="form-close-button" label={<SlClose size={24} />} onClick={handleCloseMenu} />
-             </div>
-          <div className="form-group form-name">
-            <label htmlFor="bundle-name">Nome*: </label>
-            <input id="bundle-name" type="text" />
-          </div>
-          <div className="form-group">
-            <label htmlFor="bundle-ingredients">Ingredientes*: </label>
-            <Select 
-              options={getIngredientOptionsForSelect()} 
-              value={getIngredientOptionsForSelect().filter(opt => selectedIngredientIds.includes(opt.value))}
-              onChange={handleOptionsChange} 
-              isMulti 
-              id="bundle-ingredients" 
-              placeholder="Selecione" 
-            />
-          </div>
-          <Button label="Adicionar Conjunto" onClick={handleSubmit} />
+        <form id="bundle-form" className="modal-form">
+            <div className="form-group form-name">
+                <label htmlFor="bundle-name">Nome*: </label>
+                <input id="bundle-name" name="bundle-name" type="text" />
+            </div>
+            <div className="form-group">
+                <label htmlFor="bundle-ingredients">Ingredientes*: </label>
+                <Select 
+                    options={getIngredientOptionsForSelect()} 
+                    value={getIngredientOptionsForSelect().filter(opt => selectedIngredientIds.includes(opt.value))}
+                    onChange={handleOptionsChange} 
+                    isMulti 
+                    id="bundle-ingredients" 
+                    placeholder="Selecione"
+                    menuPortalTarget={document.body}
+                    styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                />
+            </div>
+            <div className="modal-form-buttons">
+                <button type="button" className="button-secondary" onClick={onCancel}>
+                    Cancelar
+                </button>
+                <button type="button" className="button-primary" onClick={onSubmit}>
+                    {isEditing ? "Salvar Alterações" : "Adicionar Conjunto"}
+                </button>
+            </div>
         </form>
     );
 }

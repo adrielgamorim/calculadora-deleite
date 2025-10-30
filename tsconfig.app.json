@@ -5,6 +5,7 @@
       "@assets/*": ["src/assets/*"],
       "@auth/*": ["src/auth/*"],
       "@components/*": ["src/components/*"],
+      "@contexts/*": ["src/contexts/*"],
       "@data/*": ["src/data/*"],
       "@helpers/*": ["src/helpers/*"],
       "@hooks/*": ["src/hooks/*"],

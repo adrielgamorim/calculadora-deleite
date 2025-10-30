@@ -7,21 +7,29 @@ import { helpers } from "@helpers/helpers";
 import { useEffect, useState } from "react";
 import { Endpoints } from "@data/Endpoints";
 import { Button } from "@components/Button";
-import { useItemForm } from "@hooks/useItemForm";
-import { RiDeleteBin2Line, RiMenuUnfold3Line } from "react-icons/ri";
+import { RiMenuUnfold3Line } from "react-icons/ri";
 import { BundleForm } from "@components/BundleForm";
 import { useColumnSort } from "@hooks/useColumnSort";
-import { getDocuments, addDocument, deleteDocument } from "@requests/requests";
+import { getDocuments, addDocument, deleteDocument, updateDocument } from "@requests/requests";
 import { SearchBar } from "@components/SearchBar";
 import { useSearch } from "@hooks/useSearch";
+import { ConfirmDialog } from "@components/ConfirmDialog";
+import { Modal } from "@components/Modal";
+import { useModal } from "@hooks/useModal";
+import { useToastContext } from "@hooks/useToastContext";
+import { Actions } from "@components/Actions";
 
 export function Bundles() {
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const { showAddItemMenu, setShowAddItemMenu } = useItemForm(false);
   const [selectedIngredientIds, setSelectedIngredientIds] = useState<string[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<Bundle | null>(null);
   const { searchTerm, setSearchTerm, filteredData } = useSearch(bundles, ['name']);
   const { data, sortColumn, sortDirection, handleSort } = useColumnSort<Bundle>(filteredData);
+  const confirmDelete = useModal();
+  const formModal = useModal();
+  const toast = useToastContext();
 
   useEffect(() => {
     Promise.all([
@@ -40,43 +48,79 @@ export function Bundles() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ingredients]);
 
-  async function handleAddBundle(bundle: Bundle): Promise<void> {
-    if (!bundle.name) {
-      alert("Por favor, preencha o Nome.");
+  function openAddModal() {
+    setEditingItem(null);
+    setSelectedIngredientIds([]);
+    formModal.open();
+  }
+
+  function openEditModal(bundle: Bundle) {
+    setEditingItem(bundle);
+    // Bundle.ingredients is string[] (IDs)
+    setSelectedIngredientIds(bundle.ingredients || []);
+    formModal.open();
+  }
+
+  function closeFormModal() {
+    formModal.close();
+    setEditingItem(null);
+    setSelectedIngredientIds([]);
+    // Reset form
+    const form = document.getElementById("bundle-form") as HTMLFormElement;
+    form?.reset();
+  }
+
+  async function handleSubmit(): Promise<void> {
+    const name = (document.getElementById("bundle-name") as HTMLInputElement)?.value || "";
+    
+    if (!name) {
+      toast.error("Por favor, preencha o Nome.");
       return;
     }
     if (selectedIngredientIds.length <= 1) {
-      alert("Por favor, selecione pelo menos dois ingredientes.");
+      toast.error("Por favor, selecione pelo menos dois ingredientes.");
       return;
     }
-    await addDocument<Bundle>(Endpoints.bundles, bundle);
-    const freshBundles = await getDocuments<Bundle>(Endpoints.bundles);
-    setBundles(await helpers.pullBundlesWithIngredients(freshBundles));
-    resetForm();
-  }
 
-  function resetForm(): void {
-    setSelectedIngredientIds([]);
-    (document.getElementById("form") as HTMLFormElement)?.reset();
-    setShowAddItemMenu(false);
-  }
-
-  function getBundleToAdd(): Bundle {
-    return {
-      name: (document.getElementById("bundle-name") as HTMLInputElement)?.value || "",
+    const bundleData: Bundle = {
+      name,
       ingredients: selectedIngredientIds,
     };
+
+    if (editingItem) {
+      // Update existing bundle
+      await updateDocument<Bundle>(Endpoints.bundles, editingItem.id!, bundleData);
+      const freshBundles = await getDocuments<Bundle>(Endpoints.bundles);
+      setBundles(await helpers.pullBundlesWithIngredients(freshBundles));
+      toast.success("Conjunto atualizado com sucesso!");
+    } else {
+      // Add new bundle
+      await addDocument<Bundle>(Endpoints.bundles, bundleData);
+      const freshBundles = await getDocuments<Bundle>(Endpoints.bundles);
+      setBundles(await helpers.pullBundlesWithIngredients(freshBundles));
+      toast.success("Conjunto adicionado com sucesso!");
+    }
+    
+    closeFormModal();
   }
 
   async function handleDelBundle(id: string): Promise<void> {
     if (await helpers.checkBundleIsUsedInCakes(id)) {
-      alert("Este conjunto está sendo usado em um bolo e não pode ser removido.");
+      toast.error("Este conjunto está sendo usado em um bolo e não pode ser removido.");
       return;
     }
-    if (window.confirm("Tem certeza que deseja remover este conjunto?")) {
-      await deleteDocument(Endpoints.bundles, id);
+    setSelectedId(id);
+    confirmDelete.open();
+  }
+
+  async function handleConfirmDelete(): Promise<void> {
+    if (selectedId) {
+      await deleteDocument(Endpoints.bundles, selectedId);
       const bundles = await getDocuments<Bundle>(Endpoints.bundles);
       setBundles(await helpers.pullBundlesWithIngredients(bundles));
+      toast.success("Conjunto removido com sucesso!");
+      confirmDelete.close();
+      setSelectedId(null);
     }
   }
 
@@ -92,17 +136,14 @@ export function Bundles() {
   }
 
   return (
-    <div onClick={(e) => { if (e.target === e.currentTarget) setShowAddItemMenu(false); }}>
+    <div>
       <h1>Conjuntos</h1>
 
-      <Button label={showAddItemMenu ? "Fechar menu" : "Adicionar Conjunto"} icon={!showAddItemMenu && <RiMenuUnfold3Line size={20} />} onClick={() => setShowAddItemMenu(prev => !prev)} />
-      {<BundleForm
-        handleSubmit={() => handleAddBundle(getBundleToAdd())}
-        handleCloseMenu={resetForm}
-        handleOptionsChange={handleOptionsChange}
-        getIngredientOptionsForSelect={getIngredientOptionsForSelect}
-        selectedIngredientIds={selectedIngredientIds}
-      />}
+      <Button 
+        label="Adicionar Conjunto" 
+        icon={<RiMenuUnfold3Line size={20} />} 
+        onClick={openAddModal} 
+      />
 
       <SearchBar 
         value={searchTerm} 
@@ -133,12 +174,43 @@ export function Bundles() {
                     </span>
                   ))}
                 </td>
-                <td><Button label={<RiDeleteBin2Line color="red" />} onClick={() => handleDelBundle(bundle.id!)} /></td>
+                <Actions
+                  handleEdit={() => openEditModal(bundle)}
+                  handleDelete={() => handleDelBundle(bundle.id!)}
+                />
               </tr>
             ))}
           </tbody>
         </table>
       )}
+
+      <Modal 
+        isOpen={formModal.isOpen} 
+        onClose={closeFormModal}
+        title={editingItem ? "Editar Conjunto" : "Adicionar Conjunto"}
+        size="small"
+      >
+        <BundleForm
+          initialValues={editingItem}
+          onSubmit={handleSubmit}
+          onCancel={closeFormModal}
+          handleOptionsChange={handleOptionsChange}
+          getIngredientOptionsForSelect={getIngredientOptionsForSelect}
+          selectedIngredientIds={selectedIngredientIds}
+          isEditing={!!editingItem}
+        />
+      </Modal>
+
+      <ConfirmDialog
+        isOpen={confirmDelete.isOpen}
+        title="Remover Conjunto"
+        message="Tem certeza que deseja remover este conjunto?"
+        confirmText="Remover"
+        cancelText="Cancelar"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={confirmDelete.close}
+      />
     </div>
   );
 }
