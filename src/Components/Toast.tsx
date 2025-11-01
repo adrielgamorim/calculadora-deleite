@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import "@styles/Toast.css";
+import * as S from "./Toast.styled";
 
 export interface ToastType {
   id: number;
@@ -31,12 +31,12 @@ export function Toast({ id, message, type, onClose, duration }: ToastProps) {
   };
 
   return (
-    <div className={`toast toast-${type}`}>
-      <span className="toast-icon">{icons[type]}</span>
-      <span className="toast-message">{message}</span>
-      <button className="toast-close" onClick={() => onClose(id)} aria-label="Fechar">
+    <S.ToastWrapper $variant={type}>
+      <S.Icon>{icons[type]}</S.Icon>
+      <S.Message>{message}</S.Message>
+      <S.CloseButton onClick={() => onClose(id)} aria-label="Fechar">
         ×
-      </button>
-    </div>
+      </S.CloseButton>
+    </S.ToastWrapper>
   );
 }

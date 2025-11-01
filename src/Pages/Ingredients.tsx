@@ -1,11 +1,11 @@
-import "@styles/Table.css";
 import type { Ingredient } from "@models/Ingredient";
 import { helpers } from "@helpers/helpers";
-import { Button } from "@components/Button";
+import { Button } from "@components/atoms/Button";
 import { Endpoints } from "@data/Endpoints";
 import { useEffect, useState } from "react";
 import { Actions } from "@components/Actions";
 import { useColumnSort } from "@hooks/useColumnSort";
+import { usePagination } from "@hooks/usePagination";
 import { IngredientForm } from "@components/IngredientForm";
 import { getDocuments, addDocument, deleteDocument, updateDocument } from "@requests/requests";
 import { RiMenuUnfold3Line } from "react-icons/ri";
@@ -15,6 +15,9 @@ import { ConfirmDialog } from "@components/ConfirmDialog";
 import { Modal } from "@components/Modal";
 import { useModal } from "@hooks/useModal";
 import { useToastContext } from "@hooks/useToastContext";
+import { FormActions } from "@components/form/FormActions";
+import * as Table from "@components/table";
+import * as Page from "@components/PageLayout.styled";
 
 export function Ingredients() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
@@ -22,6 +25,17 @@ export function Ingredients() {
   const [editingItem, setEditingItem] = useState<Ingredient | null>(null);
   const { searchTerm, setSearchTerm, filteredData } = useSearch(ingredients, ['name', 'unit']);
   const {data, sortColumn, sortDirection, handleSort} = useColumnSort<Ingredient>(filteredData);
+  const {
+    paginatedData,
+    currentPage,
+    pageSize,
+    totalPages,
+    totalItems,
+    goToPage,
+    setPageSize,
+    canGoNext,
+    canGoPrevious,
+  } = usePagination(data, { initialPageSize: 10 });
   const confirmDelete = useModal();
   const formModal = useModal();
   const toast = useToastContext();
@@ -104,51 +118,65 @@ export function Ingredients() {
   }
 
   return (
-    <div>
-      <h1>Ingredientes</h1>
+    <Page.PageContainer>
+      <Page.PageHeader>
+        <Page.PageTitle>Ingredientes</Page.PageTitle>
+        
+        <Page.PageActions>
+          <SearchBar 
+            value={searchTerm} 
+            onChange={setSearchTerm}
+            placeholder="Buscar por nome ou unidade."
+          />
+          
+          <Button 
+            onClick={openAddModal}
+            variant="primary"
+          >
+            <RiMenuUnfold3Line size={20} />
+            Adicionar Ingrediente
+          </Button>
+        </Page.PageActions>
+      </Page.PageHeader>
 
-      <Button 
-        label="Adicionar Ingrediente" 
-        icon={<RiMenuUnfold3Line size={20} />} 
-        onClick={openAddModal} 
-      />
-
-      <SearchBar 
-        value={searchTerm} 
-        onChange={setSearchTerm}
-        placeholder="Buscar por nome ou unidade..."
-      />
-
-      {ingredients.length === 0 ? <p>Nenhum ingrediente encontrado.</p> : (
-        <table>
-          <thead>
-            <tr>
-              <th onClick={() => handleSort("name")}>
-                Nome {sortColumn === "name" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th onClick={() => handleSort("price")}>
-                Preço {sortColumn === "price" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th onClick={() => handleSort("quantity")}>
-                Quantidade {sortColumn === "quantity" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th className="static">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map(ingredient => (
-              <tr key={ingredient.id}>
-                <td>{ingredient.name}</td>
-                <td>{ingredient.price}</td>
-                <td>{ingredient.quantity}{helpers.convertUnitForDisplay(ingredient.unit)}</td>
-                <Actions
-                  handleEdit={() => openEditModal(ingredient)}
-                  handleDelete={() => handleDelIngredient(ingredient.id!)}
-                />
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {ingredients.length === 0 ? (
+        <Page.EmptyState>Nenhum ingrediente encontrado.</Page.EmptyState>
+      ) : (
+        <Table.EntityTable
+          data={paginatedData}
+          columns={[
+            { key: 'name', label: 'Nome' },
+            { 
+              key: 'price', 
+              label: 'Preço',
+              render: (item) => `R$ ${helpers.humanizePrice(item.price)}`
+            },
+            { 
+              key: 'quantity', 
+              label: 'Quantidade',
+              render: (item) => `${item.quantity}${helpers.convertUnitForDisplay(item.unit)}`
+            },
+          ]}
+          sortColumn={sortColumn}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+          renderActions={(ingredient) => (
+            <Actions
+              handleEdit={() => openEditModal(ingredient)}
+              handleDelete={() => handleDelIngredient(ingredient.id!)}
+            />
+          )}
+          pagination={{
+            currentPage,
+            totalPages,
+            totalItems,
+            pageSize,
+            onPageChange: goToPage,
+            onPageSizeChange: setPageSize,
+            canGoPrevious,
+            canGoNext,
+          }}
+        />
       )}
 
       <Modal 
@@ -156,12 +184,23 @@ export function Ingredients() {
         onClose={closeFormModal}
         title={editingItem ? "Editar Ingrediente" : "Adicionar Ingrediente"}
         size="small"
+        footer={
+          <FormActions noDivider>
+            <Button type="button" variant="secondary" onClick={closeFormModal}>
+              Cancelar
+            </Button>
+            <Button type="submit" form="ingredient-form" variant="primary">
+              {editingItem ? "Salvar Alterações" : "Adicionar Ingrediente"}
+            </Button>
+          </FormActions>
+        }
       >
         <IngredientForm
           initialValues={editingItem}
           onSubmit={handleSubmit}
           onCancel={closeFormModal}
           isEditing={!!editingItem}
+          hideActions
         />
       </Modal>
 
@@ -175,6 +214,6 @@ export function Ingredients() {
         onConfirm={handleConfirmDelete}
         onCancel={confirmDelete.close}
       />
-    </div>
+    </Page.PageContainer>
   );
 }

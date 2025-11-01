@@ -1,14 +1,16 @@
 import useAuth from "@auth/useAuth";
 import { Outlet } from "react-router-dom";
-import { Button } from "@components/Button";
+import { Button } from "@components/atoms/Button";
 import { Footer } from "@components/Footer";
 import { Navbar } from "@components/Navbar";
 import { Loading } from "@components/Loading";
 import { SignInWithGoogleButton } from "@components/SignInWithGoogleButton";
 import { ToastProvider } from "@contexts/ToastContext";
+import { ConfirmDialog } from "@components/ConfirmDialog";
+import * as S from "./Layout.styled";
 
 export function Layout() {
-  const { user, loading, signInWithGoogle, signOut } = useAuth();
+  const { user, loading, signInWithGoogle, signOut, confirmLogoutModal, handleConfirmLogout } = useAuth();
 
   if (loading) {
     return <Loading />;
@@ -21,21 +23,22 @@ export function Layout() {
     <ToastProvider>
       {user ? (
         userIsAuthorized ? (
-          <>
+          <S.LayoutContainer>
             <Navbar />
-            <main>
+            <S.MainContent>
               <Outlet />
-            </main>
-          </>
+            </S.MainContent>
+            <Footer />
+          </S.LayoutContainer>
         ) : (
-          <div>
-            <h1>Você não tem permissão para acessar esta página</h1>
-            <Button label="Sair" onClick={async () => await signOut()} />
-          </div>
+          <S.UnauthorizedContainer>
+            <S.UnauthorizedTitle>Você não tem permissão para acessar esta página</S.UnauthorizedTitle>
+            <Button onClick={async () => await signOut()}>Sair</Button>
+          </S.UnauthorizedContainer>
         )
       ) : (
-        <div>
-          <h1>Faça o login para acessar esta página</h1>
+        <S.LoginContainer>
+          <S.LoginTitle>Faça o login para acessar esta página</S.LoginTitle>
           <SignInWithGoogleButton
             handleClick={async () => {
               try {
@@ -45,9 +48,16 @@ export function Layout() {
               }
             }}
           />
-        </div>
+        </S.LoginContainer>
       )}
-      <Footer />
+      <ConfirmDialog
+        isOpen={confirmLogoutModal.isOpen}
+        onCancel={confirmLogoutModal.close}
+        onConfirm={handleConfirmLogout}
+        title="Confirmar Saída"
+        message="Tem certeza que deseja sair?"
+        variant="warning"
+      />
     </ToastProvider>
   );
 }

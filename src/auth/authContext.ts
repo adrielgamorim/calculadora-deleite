@@ -6,6 +6,12 @@ export type AuthContextShape = {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: (confirm?: boolean) => Promise<void>;
+  confirmLogoutModal: {
+    isOpen: boolean;
+    open: () => void;
+    close: () => void;
+  };
+  handleConfirmLogout: () => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextShape | undefined>(undefined);

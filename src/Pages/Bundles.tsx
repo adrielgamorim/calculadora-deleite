@@ -1,4 +1,3 @@
-import "@styles/Table.css";
 import type { Bundle } from "@models/Bundle";
 import type { MultiValue } from 'react-select';
 import type { Ingredient } from "@models/Ingredient";
@@ -6,10 +5,11 @@ import { Common } from "@data/Common";
 import { helpers } from "@helpers/helpers";
 import { useEffect, useState } from "react";
 import { Endpoints } from "@data/Endpoints";
-import { Button } from "@components/Button";
+import { Button } from "@components/atoms/Button";
 import { RiMenuUnfold3Line } from "react-icons/ri";
 import { BundleForm } from "@components/BundleForm";
 import { useColumnSort } from "@hooks/useColumnSort";
+import { usePagination } from "@hooks/usePagination";
 import { getDocuments, addDocument, deleteDocument, updateDocument } from "@requests/requests";
 import { SearchBar } from "@components/SearchBar";
 import { useSearch } from "@hooks/useSearch";
@@ -18,6 +18,9 @@ import { Modal } from "@components/Modal";
 import { useModal } from "@hooks/useModal";
 import { useToastContext } from "@hooks/useToastContext";
 import { Actions } from "@components/Actions";
+import { FormActions } from "@components/form/FormActions";
+import * as Table from "@components/table";
+import * as Page from "@components/PageLayout.styled";
 
 export function Bundles() {
   const [bundles, setBundles] = useState<Bundle[]>([]);
@@ -27,6 +30,17 @@ export function Bundles() {
   const [editingItem, setEditingItem] = useState<Bundle | null>(null);
   const { searchTerm, setSearchTerm, filteredData } = useSearch(bundles, ['name']);
   const { data, sortColumn, sortDirection, handleSort } = useColumnSort<Bundle>(filteredData);
+  const {
+    paginatedData,
+    currentPage,
+    pageSize,
+    totalPages,
+    totalItems,
+    goToPage,
+    setPageSize,
+    canGoNext,
+    canGoPrevious,
+  } = usePagination(data, { initialPageSize: 10 });
   const confirmDelete = useModal();
   const formModal = useModal();
   const toast = useToastContext();
@@ -129,52 +143,67 @@ export function Bundles() {
   }
 
   return (
-    <div>
-      <h1>Conjuntos</h1>
+    <Page.PageContainer>
+      <Page.PageHeader>
+        <Page.PageTitle>Conjuntos</Page.PageTitle>
 
-      <Button 
-        label="Adicionar Conjunto" 
-        icon={<RiMenuUnfold3Line size={20} />} 
-        onClick={openAddModal} 
-      />
+        <Page.PageActions>
+          <SearchBar 
+            value={searchTerm} 
+            onChange={setSearchTerm}
+            placeholder="Buscar por nome."
+          />
 
-      <SearchBar 
-        value={searchTerm} 
-        onChange={setSearchTerm}
-        placeholder="Buscar por nome..."
-      />
+          <Button onClick={openAddModal} variant="primary">
+            <RiMenuUnfold3Line size={20} />
+            Adicionar Conjunto
+          </Button>
+        </Page.PageActions>
+      </Page.PageHeader>
 
-      {bundles.length === 0 ? <p>Nenhum Conjunto encontrado.</p> : (
-        <table>
-          <thead>
-            <tr>
-              <th onClick={() => handleSort("name")}>
-                Nome {sortColumn === "name" ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th className="static">Ingredientes</th>
-              <th className="static">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map(bundle => (
-              <tr key={bundle.id}>
-                <td>{bundle.name}</td>
-                <td>
+      {bundles.length === 0 ? (
+        <Page.EmptyState>Nenhum conjunto encontrado.</Page.EmptyState>
+      ) : (
+        <Table.EntityTable
+          data={paginatedData}
+          columns={[
+            { key: 'name', label: 'Nome' },
+            { 
+              key: 'hydratedIngredients', 
+              label: 'Ingredientes',
+              sortable: false,
+              render: (bundle) => (
+                <>
                   {bundle.hydratedIngredients?.map((ingredient, index) => (
                     <span key={ingredient.id}>
                       {ingredient.name.trim()}
                       {index < bundle.hydratedIngredients!.length - 1 && Common.tableItemSeparator}
                     </span>
                   ))}
-                </td>
-                <Actions
-                  handleEdit={() => openEditModal(bundle)}
-                  handleDelete={() => handleDelBundle(bundle.id!)}
-                />
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </>
+              )
+            },
+          ]}
+          sortColumn={sortColumn}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+          renderActions={(bundle) => (
+            <Actions
+              handleEdit={() => openEditModal(bundle)}
+              handleDelete={() => handleDelBundle(bundle.id!)}
+            />
+          )}
+          pagination={{
+            currentPage,
+            totalPages,
+            totalItems,
+            pageSize,
+            onPageChange: goToPage,
+            onPageSizeChange: setPageSize,
+            canGoPrevious,
+            canGoNext,
+          }}
+        />
       )}
 
       <Modal 
@@ -182,6 +211,16 @@ export function Bundles() {
         onClose={closeFormModal}
         title={editingItem ? "Editar Conjunto" : "Adicionar Conjunto"}
         size="small"
+        footer={
+          <FormActions noDivider>
+            <Button type="button" variant="secondary" onClick={closeFormModal}>
+              Cancelar
+            </Button>
+            <Button type="submit" form="bundle-form" variant="primary">
+              {editingItem ? "Salvar Alterações" : "Adicionar Conjunto"}
+            </Button>
+          </FormActions>
+        }
       >
         <BundleForm
           initialValues={editingItem}
@@ -191,6 +230,7 @@ export function Bundles() {
           getIngredientOptionsForSelect={getIngredientOptionsForSelect}
           selectedIngredientIds={selectedIngredientIds}
           isEditing={!!editingItem}
+          hideActions
         />
       </Modal>
 
@@ -204,6 +244,6 @@ export function Bundles() {
         onConfirm={handleConfirmDelete}
         onCancel={confirmDelete.close}
       />
-    </div>
+    </Page.PageContainer>
   );
 }

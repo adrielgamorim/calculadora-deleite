@@ -1,7 +1,11 @@
-import "@styles/AddItemForm.css";
 import type { Bundle } from "@models/Bundle";
 import Select, { type MultiValue } from 'react-select';
 import { useEffect, useState } from "react";
+import { FormGroup } from "@components/form/FormGroup";
+import { Label } from "@components/form/Label";
+import { FormActions } from "@components/form/FormActions";
+import { Input } from "@components/atoms/Input";
+import { Button } from "@components/atoms/Button";
 
 type BundleFormProps = {
     initialValues?: Bundle | null;
@@ -11,6 +15,7 @@ type BundleFormProps = {
     getIngredientOptionsForSelect: () => { label: string; value: string }[];
     selectedIngredientIds: string[];
     isEditing?: boolean;
+    hideActions?: boolean;
 };
 
 export function BundleForm({ 
@@ -20,7 +25,8 @@ export function BundleForm({
     handleOptionsChange, 
     getIngredientOptionsForSelect, 
     selectedIngredientIds,
-    isEditing = false 
+    isEditing = false,
+    hideActions = false
 }: BundleFormProps) {
     const [formData, setFormData] = useState({
         name: ""
@@ -38,45 +44,51 @@ export function BundleForm({
         setFormData(prev => ({ ...prev, [field]: value }));
     }
 
-    async function handleSubmit() {
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
         await onSubmit({
             name: formData.name
         } as Bundle);
     }
 
     return (
-        <form id="bundle-form" className="modal-form" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
-            <div className="form-group form-name">
-                <label htmlFor="bundle-name">Nome*: </label>
-                <input 
-                    id="bundle-name" 
-                    name="bundle-name" 
+        <form id="bundle-form" onSubmit={handleSubmit}>
+            <FormGroup>
+                <Label htmlFor="bundle-name" required>Nome</Label>
+                <Input
+                    id="bundle-name"
+                    name="bundle-name"
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
+                    fullWidth
                 />
-            </div>
-            <div className="form-group">
-                <label htmlFor="bundle-ingredients">Ingredientes*: </label>
-                <Select 
-                    options={getIngredientOptionsForSelect()} 
+            </FormGroup>
+
+            <FormGroup>
+                <Label htmlFor="bundle-ingredients" required>Ingredientes</Label>
+                <Select
+                    options={getIngredientOptionsForSelect()}
                     value={getIngredientOptionsForSelect().filter(opt => selectedIngredientIds.includes(opt.value))}
-                    onChange={handleOptionsChange} 
-                    isMulti 
-                    id="bundle-ingredients" 
+                    onChange={handleOptionsChange}
+                    isMulti
+                    id="bundle-ingredients"
                     placeholder="Selecione"
                     menuPortalTarget={document.body}
                     styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
                 />
-            </div>
-            <div className="modal-form-buttons">
-                <button type="button" className="button-secondary" onClick={onCancel}>
-                    Cancelar
-                </button>
-                <button type="submit" className="button-primary">
-                    {isEditing ? "Salvar Alterações" : "Adicionar Conjunto"}
-                </button>
-            </div>
+            </FormGroup>
+
+            {!hideActions && (
+                <FormActions>
+                    <Button type="button" variant="secondary" onClick={onCancel}>
+                        Cancelar
+                    </Button>
+                    <Button type="submit" variant="primary">
+                        {isEditing ? "Salvar Alterações" : "Adicionar Conjunto"}
+                    </Button>
+                </FormActions>
+            )}
         </form>
     );
 }

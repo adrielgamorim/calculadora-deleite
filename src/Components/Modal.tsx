@@ -1,16 +1,17 @@
 import { useEffect } from "react";
-import "@styles/Modal.css";
+import * as S from "./Modal.styled";
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
-  size?: 'small' | 'medium' | 'large';
+  footer?: React.ReactNode;
+  size?: 'xxs' | 'xs' | 'small' | 'medium' | 'large';
   minHeight?: string;
 }
 
-export function Modal({ isOpen, onClose, title, children, size = 'medium', minHeight = '200px' }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, footer, size = 'medium', minHeight }: ModalProps) {
   // Close modal on ESC key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -39,24 +40,29 @@ export function Modal({ isOpen, onClose, title, children, size = 'medium', minHe
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div 
-        className={`modal-content modal-${size}`}
-        style={minHeight ? { minHeight } : undefined}
+    <S.Overlay onClick={onClose}>
+      <S.Content 
+        $size={size}
+        $minHeight={minHeight}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="modal-header">
-            <h2>{title}</h2>
-            <button className="modal-close" onClick={onClose} aria-label="Fechar">
+          <S.Header>
+            <S.Title>{title}</S.Title>
+            <S.CloseButton onClick={onClose} aria-label="Fechar">
               ×
-            </button>
-          </div>
+            </S.CloseButton>
+          </S.Header>
         )}
-        <div className="modal-body">
+        <S.Body>
           {children}
-        </div>
-      </div>
-    </div>
+        </S.Body>
+        {footer && (
+          <S.Footer>
+            {footer}
+          </S.Footer>
+        )}
+      </S.Content>
+    </S.Overlay>
   );
 }

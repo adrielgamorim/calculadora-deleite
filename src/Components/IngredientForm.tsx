@@ -1,15 +1,21 @@
-import "@styles/AddItemForm.css";
 import type { Ingredient } from "@models/Ingredient";
 import { useState, useEffect } from "react";
+import { FormGroup } from "@components/form/FormGroup";
+import { Label } from "@components/form/Label";
+import { FormActions } from "@components/form/FormActions";
+import { Input } from "@components/atoms/Input";
+import { Select } from "@components/atoms/Select";
+import { Button } from "@components/atoms/Button";
 
 type IngredientFormProps = {
     initialValues?: Ingredient | null;
     onSubmit: (data: Ingredient) => Promise<void>;
     onCancel: () => void;
     isEditing?: boolean;
+    hideActions?: boolean;
 };
 
-export function IngredientForm({ initialValues, onSubmit, onCancel, isEditing = false }: IngredientFormProps) {
+export function IngredientForm({ initialValues, onSubmit, onCancel, isEditing = false, hideActions = false }: IngredientFormProps) {
     const [formData, setFormData] = useState({
         name: "",
         price: "",
@@ -39,7 +45,8 @@ export function IngredientForm({ initialValues, onSubmit, onCancel, isEditing = 
         setFormData(prev => ({ ...prev, [field]: value }));
     }
 
-    async function handleSubmit() {
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
         await onSubmit({
             name: formData.name,
             price: formData.price as unknown as number,
@@ -49,46 +56,53 @@ export function IngredientForm({ initialValues, onSubmit, onCancel, isEditing = 
     }
 
     return (
-        <form id="ingredient-form" className="modal-form" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
-            <div className="form-group form-name">
-                <label htmlFor="ingredient-name">Nome*: </label>
-                <input 
-                    id="ingredient-name" 
-                    name="ingredient-name" 
+        <form id="ingredient-form" onSubmit={handleSubmit}>
+            <FormGroup>
+                <Label htmlFor="ingredient-name" required>Nome</Label>
+                <Input
+                    id="ingredient-name"
+                    name="ingredient-name"
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
+                    fullWidth
                 />
-            </div>
-            <div className="form-group ingredient-form-price">
-                <label htmlFor="ingredient-price">Preço*: </label>
-                <input 
-                    id="ingredient-price" 
-                    name="ingredient-price" 
+            </FormGroup>
+
+            <FormGroup>
+                <Label htmlFor="ingredient-price" required>Preço</Label>
+                <Input
+                    id="ingredient-price"
+                    name="ingredient-price"
                     type="text"
                     value={formData.price}
                     onChange={(e) => handleInputChange('price', e.target.value)}
                     placeholder="Ex: 10,50"
+                    fullWidth
                 />
-            </div>
-            <div className="form-group ingredient-form-quantity">
-                <label htmlFor="ingredient-quantity">Quantidade*: </label>
-                <input 
-                    id="ingredient-quantity" 
-                    name="ingredient-quantity" 
+            </FormGroup>
+
+            <FormGroup>
+                <Label htmlFor="ingredient-quantity" required>Quantidade</Label>
+                <Input
+                    id="ingredient-quantity"
+                    name="ingredient-quantity"
                     type="text"
                     value={formData.quantity}
                     onChange={(e) => handleInputChange('quantity', e.target.value)}
                     placeholder="Ex: 500"
+                    fullWidth
                 />
-            </div>
-            <div className="form-group ingredient-form-unit">
-                <label htmlFor="ingredient-unit">Tipo de unidade*: </label>
-                <select 
-                    id="ingredient-unit" 
+            </FormGroup>
+
+            <FormGroup>
+                <Label htmlFor="ingredient-unit" required>Tipo de unidade</Label>
+                <Select
+                    id="ingredient-unit"
                     name="ingredient-unit"
                     value={formData.unit}
                     onChange={(e) => handleInputChange('unit', e.target.value)}
+                    fullWidth
                 >
                     <option value="" disabled>Selecione</option>
                     <option value="kg">kg</option>
@@ -96,16 +110,19 @@ export function IngredientForm({ initialValues, onSubmit, onCancel, isEditing = 
                     <option value="l">l</option>
                     <option value="ml">ml</option>
                     <option value="un">un</option>
-                </select>
-            </div>
-            <div className="modal-form-buttons">
-                <button type="button" className="button-secondary" onClick={onCancel}>
-                    Cancelar
-                </button>
-                <button type="submit" className="button-primary">
-                    {isEditing ? "Salvar Alterações" : "Adicionar Ingrediente"}
-                </button>
-            </div>
+                </Select>
+            </FormGroup>
+
+            {!hideActions && (
+                <FormActions>
+                    <Button type="button" variant="secondary" onClick={onCancel}>
+                        Cancelar
+                    </Button>
+                    <Button type="submit" variant="primary">
+                        {isEditing ? "Salvar Alterações" : "Adicionar Ingrediente"}
+                    </Button>
+                </FormActions>
+            )}
         </form>
     );
 }

@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { useClickOutside } from '@hooks/useClickOutside';
+import * as S from './BundleDetails.styled';
 
 interface BundleDetailsProps {
   bundleName: string;
@@ -21,21 +22,21 @@ export function BundleDetails({ bundleName, ingredients, convertUnitForDisplay }
   });
 
   return (
-    <details ref={detailsRef}>
-      <summary>{bundleName}</summary>
-      <ul>
+    <S.Details ref={detailsRef}>
+      <S.Summary>{bundleName}</S.Summary>
+      <S.IngredientsList>
         {ingredients && ingredients.length > 0 ? (
           ingredients.map(item => (
-            <li key={item.ingredientId}>
+            <S.IngredientItem key={item.ingredientId}>
               {item.ingredient.name}: {item.quantity}{convertUnitForDisplay(item.ingredient.unit)}
-            </li>
+            </S.IngredientItem>
           ))
         ) : (
-          <li style={{ fontStyle: 'italic', color: '#999' }}>
+          <S.EmptyMessage>
             Quantidades não definidas para este bolo
-          </li>
+          </S.EmptyMessage>
         )}
-      </ul>
-    </details>
+      </S.IngredientsList>
+    </S.Details>
   );
 }

@@ -1,6 +1,6 @@
 import { Toast } from "@components/Toast";
 import type { ToastType } from "@components/Toast";
-import "@styles/Toast.css";
+import { Container } from "./Toast.styled";
 
 interface ToastContainerProps {
   toasts: ToastType[];
@@ -9,7 +9,7 @@ interface ToastContainerProps {
 
 export function ToastContainer({ toasts, onClose }: ToastContainerProps) {
   return (
-    <div className="toast-container">
+    <Container>
       {toasts.map(toast => (
         <Toast
           key={toast.id}
@@ -17,6 +17,6 @@ export function ToastContainer({ toasts, onClose }: ToastContainerProps) {
           onClose={onClose}
         />
       ))}
-    </div>
+    </Container>
   );
 }

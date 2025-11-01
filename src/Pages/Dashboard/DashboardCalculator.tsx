@@ -12,6 +12,8 @@ import { useColumnSort } from "@hooks/useColumnSort";
 import { useColumnVisibility } from "@hooks/useColumnVisibility";
 import { ColumnFilterMenu } from "@components/ColumnFilterMenu";
 import { useToastContext } from "@hooks/useToastContext";
+import * as Page from "@components/PageLayout.styled";
+import * as Table from "@components/table";
 
 export function DashboardCalculator() {
   const [config, setConfig] = useState<ConfigModel | null>(null);
@@ -70,26 +72,26 @@ export function DashboardCalculator() {
       const baseWithPackaging = calculatePriceWithPackaging(cake.frame, base);
       const baseSlice = calculateCakeSlicePrice(cake.frame, base);
       const baseSliceWithPackaging = calculatePriceWithPackaging(cake.frame, baseSlice, true);
-      
+
       // Convert base prices (without packaging)
       const converted = calculateConvertedPrice(base);
       const convertedSlice = calculateConvertedPrice(baseSlice);
-      
+
       // Add packaging AFTER conversion (no profit on packaging)
       const convertedWithPackaging = calculatePriceWithPackaging(cake.frame, converted);
       const convertedSliceWithPackaging = calculatePriceWithPackaging(cake.frame, convertedSlice, true);
-      
+
       // Calculate selling prices (with rounding)
       const sellingBasePrice = calculateSellingPrice(convertedWithPackaging);
       const sellingSlicePrice = calculateSellingPrice(convertedSliceWithPackaging);
-      
+
       // Calculate Ifood prices: apply tax first, then round
       const ifoodSellingBasePrice = calculateSellingPrice(calculateIfoodPrice(convertedWithPackaging));
       const ifoodSellingSlicePrice = calculateSellingPrice(calculateIfoodPrice(convertedSliceWithPackaging));
-      
+
       // Get frame size number only (remove "cm" suffix)
       const frameSize = helpers.getFrameName(cake.frame).replace('cm', '');
-      
+
       return {
         id: cake.id!,
         name: `${cake.name} - Aro ${frameSize}`,
@@ -121,7 +123,7 @@ export function DashboardCalculator() {
 
   function calculateBaseCakePrice(cake: Cake): number {
     if (!config) {
-      alert("Configurações não carregadas.");
+      toast.error("Configurações não carregadas.");
       return 0;
     }
 
@@ -182,22 +184,22 @@ export function DashboardCalculator() {
       // Round to nearest .90
       const previousTarget = integerPart - 0.10;
       const nextTarget = integerPart + 0.90;
-      
+
       const distanceToPrevious = Math.abs(convertedWithPackaging - previousTarget);
       const distanceToNext = Math.abs(convertedWithPackaging - nextTarget);
-      
+
       return distanceToPrevious < distanceToNext ? previousTarget : nextTarget;
-      
+
     } else if (config.roundingStrategy === "to_50") {
       // Round to nearest .50
       const currentTarget = integerPart + 0.50;
       const nextTarget = integerPart + 1.50;
-      
+
       const distanceToCurrent = Math.abs(convertedWithPackaging - currentTarget);
       const distanceToNext = Math.abs(convertedWithPackaging - nextTarget);
-      
+
       return distanceToCurrent < distanceToNext ? currentTarget : nextTarget;
-      
+
     } else if (config.roundingStrategy === "to_integer") {
       // Round to nearest integer
       return Math.round(convertedWithPackaging);
@@ -224,39 +226,50 @@ export function DashboardCalculator() {
   }
 
   return (
-    <div>
-      <h1>Calculadora</h1>
+    <Page.PageContainer>
+      <Page.PageHeader>
+        <Page.PageTitle>Calculadora</Page.PageTitle>
 
-      <ColumnFilterMenu
-        columns={columns.map(c => ({ key: c.key as string, label: c.label }))}
-        visibleColumns={visibleColumns}
-        onToggle={toggleColumn}
-      />
+        <Page.PageActions>
+          <ColumnFilterMenu
+            columns={columns.map(c => ({ key: c.key as string, label: c.label }))}
+            visibleColumns={visibleColumns}
+            onToggle={toggleColumn}
+          />
+        </Page.PageActions>
+      </Page.PageHeader>
 
-      {prices.length === 0 ? <Loading /> : (
-        <table>
-          <thead>
-            <tr>
-              {columns.filter(col => isColumnVisible(col.key as string)).map(col => (
-                <th key={col.key} onClick={() => handleSort(col.key)}>
-                  {col.label} {sortColumn === col.key ? (sortDirection === "asc" ? "↑" : "↓") : ""}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.map(priceTable => (
-              <tr key={priceTable.id}>
+      {prices.length === 0 ? (
+        <Loading />
+      ) : (
+        <Table.TableContainer>
+          <table>
+            <thead>
+              <Table.TableRow>
                 {columns.filter(col => isColumnVisible(col.key as string)).map(col => (
-                  <td key={col.key}>
-                    {col.key === 'name' ? priceTable[col.key] : `R$${priceTable[col.key]}`}
-                  </td>
+                  <Table.TableHeader
+                    column={{ key: col.key, label: col.label }}
+                    sortColumn={sortColumn}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                  />
                 ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+              </Table.TableRow>
+            </thead>
+            <tbody>
+              {data.map(priceTable => (
+                <Table.TableRow key={priceTable.id}>
+                  {columns.filter(col => isColumnVisible(col.key as string)).map(col => (
+                    <td key={col.key}>
+                      {col.key === 'name' ? priceTable[col.key] : `R$ ${priceTable[col.key]}`}
+                    </td>
+                  ))}
+                </Table.TableRow>
+              ))}
+            </tbody>
+          </table>
+        </Table.TableContainer>
       )}
-    </div>
+    </Page.PageContainer>
   );
 }

@@ -1,22 +1,42 @@
-import { Button } from "@components/Button";
-import { MdEdit } from "react-icons/md";
-import { RiDeleteBin2Line } from "react-icons/ri";
-import { RiMenuUnfold3Line } from "react-icons/ri";
-import "@styles/ActionsMenu.css";
+import { useState, useRef } from "react";
+import { RiMoreFill } from "react-icons/ri";
+import { ActionsDialog } from "@components/ActionsDialog";
+import * as S from "./Actions.styled";
 
 type ActionProps = {
     handleEdit?: () => void | Promise<void>;
     handleDelete?: () => void | Promise<void>;
+    itemName?: string;
 };
 
-export function Actions({ handleEdit, handleDelete }: ActionProps) {
+export function Actions({ handleEdit, handleDelete, itemName }: ActionProps) {
+    const [isOpen, setIsOpen] = useState(false);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+
+    function openDialog() {
+        setIsOpen(true);
+    }
+
+    function closeDialog() {
+        setIsOpen(false);
+    }
+
     return (
-        <td className="actions">
-            <span>{<RiMenuUnfold3Line size={24} />}</span>
-            <div className="actions-menu">
-                <Button label={<MdEdit />} onClick={handleEdit} />
-                <Button label={<RiDeleteBin2Line color="red" />} onClick={handleDelete} />
-            </div>
-        </td>
+        <>
+            <S.ActionsCell>
+                <S.ActionButton ref={buttonRef} onClick={openDialog}>
+                    <RiMoreFill size={24} />
+                </S.ActionButton>
+            </S.ActionsCell>
+
+            <ActionsDialog
+                isOpen={isOpen}
+                onClose={closeDialog}
+                onEdit={handleEdit || (() => {})}
+                onDelete={handleDelete || (() => {})}
+                itemName={itemName}
+                anchorEl={buttonRef.current}
+            />
+        </>
     );
 }

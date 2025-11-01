@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { IoFilterOutline, IoCheckmark } from "react-icons/io5";
-import "@styles/ColumnFilterMenu.css";
+import * as S from "./ColumnFilterMenu.styled";
 
 interface Column {
   key: string;
@@ -34,45 +34,43 @@ export function ColumnFilterMenu({ columns, visibleColumns, onToggle }: ColumnFi
   }, [isOpen]);
 
   return (
-    <div className="column-filter-menu" ref={menuRef}>
-      <button
-        className="filter-toggle-button"
+    <S.Container ref={menuRef}>
+      <S.FilterToggleButton
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Filtrar colunas"
       >
         <IoFilterOutline size={20} />
         Filtrar Colunas
-      </button>
+      </S.FilterToggleButton>
 
       {isOpen && (
-        <div className="filter-dropdown">
-          <div className="filter-header">
+        <S.FilterDropdown>
+          <S.FilterHeader>
             <span>Mostrar colunas</span>
-            <button
-              className="close-button"
+            <S.CloseButton
               onClick={() => setIsOpen(false)}
               aria-label="Fechar"
             >
               ×
-            </button>
-          </div>
-          <div className="filter-options">
+            </S.CloseButton>
+          </S.FilterHeader>
+          <S.FilterOptions>
             {columns.map(col => (
-              <label key={col.key} className="filter-option">
+              <S.FilterOption key={col.key}>
                 <input
                   type="checkbox"
                   checked={visibleColumns.has(col.key)}
                   onChange={() => onToggle(col.key)}
                 />
-                <span className="checkbox-custom">
+                <S.CheckboxCustom $checked={visibleColumns.has(col.key)}>
                   {visibleColumns.has(col.key) && <IoCheckmark />}
-                </span>
-                <span className="column-label">{col.label}</span>
-              </label>
+                </S.CheckboxCustom>
+                <S.ColumnLabel>{col.label}</S.ColumnLabel>
+              </S.FilterOption>
             ))}
-          </div>
-        </div>
+          </S.FilterOptions>
+        </S.FilterDropdown>
       )}
-    </div>
+    </S.Container>
   );
 }

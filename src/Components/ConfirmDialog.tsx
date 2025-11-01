@@ -1,5 +1,5 @@
 import { Modal } from "@components/Modal";
-import "@styles/ConfirmDialog.css";
+import * as S from "./ConfirmDialog.styled";
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -28,23 +28,17 @@ export function ConfirmDialog({
 
   return (
     <Modal isOpen={isOpen} onClose={onCancel} title={title} size="small">
-      <div className="confirm-dialog">
-        <p className="confirm-message">{message}</p>
-        <div className="confirm-actions">
-          <button
-            className="btn-cancel"
-            onClick={onCancel}
-          >
+      <S.Dialog>
+        <S.Message>{message}</S.Message>
+        <S.Actions>
+          <S.CancelButton onClick={onCancel}>
             {cancelText}
-          </button>
-          <button
-            className={`btn-confirm btn-confirm-${variant}`}
-            onClick={handleConfirm}
-          >
+          </S.CancelButton>
+          <S.ConfirmButton $variant={variant} onClick={handleConfirm}>
             {confirmText}
-          </button>
-        </div>
-      </div>
+          </S.ConfirmButton>
+        </S.Actions>
+      </S.Dialog>
     </Modal>
   );
 }

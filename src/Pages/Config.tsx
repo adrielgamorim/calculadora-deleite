@@ -1,0 +1,149 @@
+import { useState, useEffect } from "react";
+import type { Config as ConfigModel } from "@models/Config";
+import { getDocuments, addDocument, updateDocument } from "@requests/requests";
+import { Endpoints } from "@data/Endpoints";
+import { helpers } from "@helpers/helpers";
+import { useToastContext } from "@hooks/useToastContext";
+import { FormGroup } from "@components/form/FormGroup";
+import { Label } from "@components/form/Label";
+import { FormActions } from "@components/form/FormActions";
+import { Input } from "@components/atoms/Input";
+import { Select } from "@components/atoms/Select";
+import { Button } from "@components/atoms/Button";
+import { Container } from "@components/layout/Container";
+
+export function Config() {
+  const [config, setConfig] = useState<ConfigModel>({
+    name: "Configurações",
+    conversionRate: 1.0,
+    frame15PackagingPrice: 0.0,
+    frame25PackagingPrice: 0.0,
+    frame35PackagingPrice: 0.0,
+    slicePackagingPrice: 0.0,
+    ifoodTax: 0.0,
+    roundingStrategy: "none",
+  });
+  const toast = useToastContext();
+
+  useEffect(() => {
+    Promise.resolve(
+      getDocuments<ConfigModel>(Endpoints.config)
+    ).then(data => setConfig(data[0] || ((c: ConfigModel) => c)));
+  }, []);
+
+  async function getNewConfigValues(): Promise<ConfigModel> {
+    return {
+      name: config.name,
+      conversionRate: helpers.parseDecimal((document.getElementById("conversion-rate") as HTMLInputElement).value),
+      frame15PackagingPrice: helpers.parseDecimal((document.getElementById("frame15-packaging-price") as HTMLInputElement).value),
+      frame25PackagingPrice: helpers.parseDecimal((document.getElementById("frame25-packaging-price") as HTMLInputElement).value),
+      frame35PackagingPrice: helpers.parseDecimal((document.getElementById("frame35-packaging-price") as HTMLInputElement).value),
+      slicePackagingPrice: helpers.parseDecimal((document.getElementById("slice-packaging-price") as HTMLInputElement).value),
+      ifoodTax: helpers.parseDecimal((document.getElementById("ifood-fee") as HTMLInputElement).value),
+      roundingStrategy: (document.getElementById("rounding-strategy") as HTMLSelectElement).value as ConfigModel["roundingStrategy"],
+    };
+  }
+
+  async function handleSaveConfig(): Promise<void> {
+    const newConfig = await getNewConfigValues();
+    if (isNaN(newConfig.conversionRate)) newConfig.conversionRate = config.conversionRate;
+    if (isNaN(newConfig.frame15PackagingPrice)) newConfig.frame15PackagingPrice = config.frame15PackagingPrice;
+    if (isNaN(newConfig.frame25PackagingPrice)) newConfig.frame25PackagingPrice = config.frame25PackagingPrice;
+    if (isNaN(newConfig.frame35PackagingPrice)) newConfig.frame35PackagingPrice = config.frame35PackagingPrice;
+    if (isNaN(newConfig.slicePackagingPrice)) newConfig.slicePackagingPrice = config.slicePackagingPrice;
+    if (isNaN(newConfig.ifoodTax)) newConfig.ifoodTax = config.ifoodTax;
+    if (config.id) {
+      await updateDocument<ConfigModel>(Endpoints.config, config.id, newConfig);
+    } else {
+      await addDocument<ConfigModel>(Endpoints.config, newConfig);
+    }
+    setConfig(newConfig);
+    toast.success("Configurações salvas com sucesso!");
+  }
+
+  return (
+    <Container>
+      <h1>Configurações</h1>
+      <form id="config-form" onSubmit={(e) => { e.preventDefault(); handleSaveConfig(); }}>
+        <FormGroup>
+          <Label htmlFor="conversion-rate">Taxa de conversão</Label>
+          <Input
+            type="text"
+            id="conversion-rate"
+            name="conversion-rate"
+            placeholder={config.conversionRate.toString()}
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <Label htmlFor="ifood-fee">Taxa do iFood</Label>
+          <Input
+            type="text"
+            id="ifood-fee"
+            name="ifood-fee"
+            placeholder={config.ifoodTax.toString()}
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <Label htmlFor="rounding-strategy">Estratégia de arredondamento</Label>
+          <Select
+            id="rounding-strategy"
+            name="rounding-strategy"
+            value={config.roundingStrategy}
+            onChange={(e) => setConfig({ ...config, roundingStrategy: e.target.value as ConfigModel["roundingStrategy"] })}
+          >
+            <option value="none">Nenhum</option>
+            <option value="to_90">Arredondar para .90</option>
+            <option value="to_50">Arredondar para .50</option>
+            <option value="to_integer">Arredondar para inteiro</option>
+          </Select>
+        </FormGroup>
+
+        <FormGroup>
+          <Label htmlFor="frame15-packaging-price">Valor da embalagem aro 15</Label>
+          <Input
+            type="text"
+            id="frame15-packaging-price"
+            name="frame15-packaging-price"
+            placeholder={config.frame15PackagingPrice.toString()}
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <Label htmlFor="frame25-packaging-price">Valor da embalagem aro 25</Label>
+          <Input
+            type="text"
+            id="frame25-packaging-price"
+            name="frame25-packaging-price"
+            placeholder={config.frame25PackagingPrice.toString()}
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <Label htmlFor="frame35-packaging-price">Valor da embalagem aro 35</Label>
+          <Input
+            type="text"
+            id="frame35-packaging-price"
+            name="frame35-packaging-price"
+            placeholder={config.frame35PackagingPrice.toString()}
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <Label htmlFor="slice-packaging-price">Valor da embalagem fatia</Label>
+          <Input
+            type="text"
+            id="slice-packaging-price"
+            name="slice-packaging-price"
+            placeholder={config.slicePackagingPrice.toString()}
+          />
+        </FormGroup>
+
+        <FormActions>
+          <Button type="submit" variant="primary">Salvar Configurações</Button>
+        </FormActions>
+      </form>
+    </Container>
+  );
+}

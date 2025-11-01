@@ -1,8 +1,12 @@
 import useAuth from "@auth/useAuth";
-import { Button } from "@components/Button";
+import { Button } from "@components/atoms/Button";
 import { ConfigModal } from "@components/ConfigModal";
+import { ThemeToggle } from "@components/ThemeToggle";
 import { useModal } from "@hooks/useModal";
 import { Link, useLocation } from "react-router-dom";
+import { RiLogoutBoxLine } from "react-icons/ri";
+import { FiSettings } from "react-icons/fi";
+import * as S from "./Navbar.styled";
 
 export function Navbar() {
   const { signOut } = useAuth();
@@ -10,58 +14,82 @@ export function Navbar() {
   const configModal = useModal();
 
   return (
-    <nav>
+    <S.Nav>
       {/* Dashboard with sub-pages */}
-      <div className="dropdown">
+      <S.DropdownContainer>
         <Button
-          label={"Dashboard"}
+          variant="ghost"
           className={location.pathname === "/" || location.pathname === "/calculadora" ? "active" : ""}
-        />
+        >
+          Dashboard
+        </Button>
 
-        <div className="dropdown-content">
+        <S.DropdownContent>
           <Link to="/">
             <Button
-              label={"Visão Geral"}
+              variant="ghost"
               className={location.pathname === "/" ? "active" : ""}
-            />
+            >
+              Visão Geral
+            </Button>
           </Link>
           <Link to="/calculadora">
             <Button
-              label={"Calculadora"}
+              variant="ghost"
               className={location.pathname === "/calculadora" ? "active" : ""}
-            />
+            >
+              Calculadora
+            </Button>
           </Link>
-        </div>
-      </div>
+        </S.DropdownContent>
+      </S.DropdownContainer>
 
       {/* Other Pages */}
       <Link to="/ingredientes">
         <Button
-          label={"Ingredientes"}
+          variant="ghost"
           className={location.pathname === "/ingredientes" ? "active" : ""}
-        />
+        >
+          Ingredientes
+        </Button>
       </Link>
       <Link to="/conjuntos">
         <Button
-          label={"Conjuntos"}
+          variant="ghost"
           className={location.pathname === "/conjuntos" ? "active" : ""}
-        />
+        >
+          Conjuntos
+        </Button>
       </Link>
       <Link to="/bolos">
         <Button
-          label={"Bolos"}
+          variant="ghost"
           className={location.pathname === "/bolos" ? "active" : ""}
-        />
+        >
+          Bolos
+        </Button>
       </Link>
       
-      <Button
-        label={"Configurações"}
-        onClick={configModal.open}
-      />
 
-      <Button label={"Sair"} onClick={() => signOut(true)} />
+      <S.NavActions>
+        <ThemeToggle />
+        <S.IconButton
+          onClick={configModal.open}
+          aria-label="Configuração"
+          title="Configuração"
+        >
+          <FiSettings size={32} />
+        </S.IconButton>
+        <S.IconButton
+          onClick={() => signOut(true)}
+          aria-label="Sair"
+          title="Sair"
+        >
+          <RiLogoutBoxLine size={24} />
+        </S.IconButton>
+      </S.NavActions>
 
       <ConfigModal isOpen={configModal.isOpen} onClose={configModal.close} />
-    </nav>
+    </S.Nav>
   );
 }

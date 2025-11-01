@@ -1,10 +1,11 @@
 import packageJson from '@package';
+import * as S from './Footer.styled';
 
 export function Footer() {
   return (
-    <footer style={{ fontSize: "0.7rem" }}>
-      <p>&copy; 2025 Calculadora D'Leite. Todos os direitos reservados.</p>
-      <p>Versão {packageJson.version}</p>
-    </footer>
+    <S.StyledFooter>
+      <S.FooterText>&copy; 2025 Calculadora D'Leite. Todos os direitos reservados.</S.FooterText>
+      <S.FooterText>Versão {packageJson.version}</S.FooterText>
+    </S.StyledFooter>
   );
 }

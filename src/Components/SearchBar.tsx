@@ -1,5 +1,5 @@
 import { IoSearchOutline, IoCloseOutline } from "react-icons/io5";
-import "@styles/SearchBar.css";
+import * as S from "./SearchBar.styled";
 
 interface SearchBarProps {
   value: string;
@@ -9,25 +9,26 @@ interface SearchBarProps {
 
 export function SearchBar({ value, onChange, placeholder = "Buscar..." }: SearchBarProps) {
   return (
-    <div className="search-bar">
-      <IoSearchOutline className="search-icon" />
-      <input
+    <S.Container>
+      <S.Icon>
+        <IoSearchOutline />
+      </S.Icon>
+      <S.Input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="search-input"
+        placeholder="Buscar"
+        title={placeholder}
       />
       {value && (
-        <button
+        <S.ClearButton
           type="button"
           onClick={() => onChange("")}
-          className="search-clear"
           aria-label="Limpar busca"
         >
           <IoCloseOutline />
-        </button>
+        </S.ClearButton>
       )}
-    </div>
+    </S.Container>
   );
 }

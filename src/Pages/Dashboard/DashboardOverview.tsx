@@ -6,7 +6,7 @@ import type { Bundle } from "@models/Bundle";
 import type { Cake } from "@models/Cake";
 import { Frames } from "@data/Frames";
 import { helpers } from "@helpers/helpers";
-import "@styles/DashboardOverview.css";
+import * as S from "./DashboardOverview.styled";
 
 interface CakeWithPrice {
   cake: Cake;
@@ -162,138 +162,138 @@ export function DashboardOverview() {
   const averagePrice = useMemo(() => getAveragePrice(), [cakes]);
 
   if (loading) {
-    return <div className="dashboard-overview"><p>Carregando...</p></div>;
+    return <S.Container><p>Carregando...</p></S.Container>;
   }
 
   return (
-    <div className="dashboard-overview">
+    <S.Container>
       <h1>Visão Geral</h1>
 
       {/* Metrics Section */}
-      <div className="metrics-section">
-        <div className="metric-card">
-          <div className="metric-icon">🥚</div>
-          <div className="metric-label">Ingredientes</div>
-          <div className="metric-value">{ingredients.length}</div>
-        </div>
-        <div className="metric-card">
-          <div className="metric-icon">🎁</div>
-          <div className="metric-label">Conjuntos</div>
-          <div className="metric-value">{bundles.length}</div>
-        </div>
-        <div className="metric-card">
-          <div className="metric-icon">🎂</div>
-          <div className="metric-label">Bolos</div>
-          <div className="metric-value">{cakes.length}</div>
-        </div>
-        <div className="metric-card">
-          <div className="metric-icon">💰</div>
-          <div className="metric-label">Preço Médio</div>
-          <div className="metric-value">R$ {helpers.humanizePrice(averagePrice)}</div>
-        </div>
-      </div>
+      <S.MetricsSection>
+        <S.MetricCard>
+          <S.MetricIcon>🥚</S.MetricIcon>
+          <S.MetricLabel>Ingredientes</S.MetricLabel>
+          <S.MetricValue>{ingredients.length}</S.MetricValue>
+        </S.MetricCard>
+        <S.MetricCard>
+          <S.MetricIcon>🎁</S.MetricIcon>
+          <S.MetricLabel>Conjuntos</S.MetricLabel>
+          <S.MetricValue>{bundles.length}</S.MetricValue>
+        </S.MetricCard>
+        <S.MetricCard>
+          <S.MetricIcon>🎂</S.MetricIcon>
+          <S.MetricLabel>Bolos</S.MetricLabel>
+          <S.MetricValue>{cakes.length}</S.MetricValue>
+        </S.MetricCard>
+        <S.MetricCard>
+          <S.MetricIcon>💰</S.MetricIcon>
+          <S.MetricLabel>Preço Médio</S.MetricLabel>
+          <S.MetricValue>R$ {helpers.humanizePrice(averagePrice)}</S.MetricValue>
+        </S.MetricCard>
+      </S.MetricsSection>
 
       {/* Content Section */}
-      <div className="content-section">
+      <S.ContentSection>
         {/* Top 3 Cakes */}
-        <div className="stats-box">
+        <S.StatsBox>
           <h2>Top 3 Bolos Mais Caros</h2>
           {top3Cakes.length === 0 ? (
             <p>Nenhum bolo cadastrado</p>
           ) : (
-            <div className="top-cakes-list">
+            <S.TopCakesList>
               {top3Cakes.map((item, index) => (
-                <div key={item.cake.id} className="cake-item">
-                  <span className="medal">{index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}</span>
-                  <div className="cake-info">
-                    <span className="cake-name">{item.cake.name}</span>
-                    <span className="cake-details">
+                <S.CakeItem key={item.cake.id}>
+                  <S.Medal>{index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}</S.Medal>
+                  <S.CakeInfo>
+                    <S.CakeName>{item.cake.name}</S.CakeName>
+                    <S.CakeDetails>
                       {helpers.getFrameName(item.cake.frame)} - R$ {helpers.humanizePrice(item.wholePrice)}
-                    </span>
-                  </div>
-                </div>
+                    </S.CakeDetails>
+                  </S.CakeInfo>
+                </S.CakeItem>
               ))}
-            </div>
+            </S.TopCakesList>
           )}
-        </div>
+        </S.StatsBox>
 
         {/* Stats Section */}
-        <div className="stats-column">
+        <S.StatsColumn>
           {/* Most Used Ingredients */}
-          <div className="stats-box">
+          <S.StatsBox>
             <h2>Ingredientes Mais Usados</h2>
             {mostUsedIngredients.length === 0 ? (
               <p>Nenhum ingrediente usado ainda</p>
             ) : (
-              <ul className="ingredient-list">
+              <S.IngredientList>
                 {mostUsedIngredients.map(item => (
-                  <li key={item.ingredient.id}>
+                  <S.IngredientItem key={item.ingredient.id}>
                     {item.ingredient.name} ({item.count} {item.count === 1 ? 'bolo' : 'bolos'})
-                  </li>
+                  </S.IngredientItem>
                 ))}
-              </ul>
+              </S.IngredientList>
             )}
-          </div>
+          </S.StatsBox>
 
           {/* Most Used Bundles */}
-          <div className="stats-box">
+          <S.StatsBox>
             <h2>Conjuntos Mais Usados</h2>
             {mostUsedBundles.length === 0 ? (
               <p>Nenhum conjunto usado ainda</p>
             ) : (
-              <ul className="ingredient-list">
+              <S.IngredientList>
                 {mostUsedBundles.map(item => (
-                  <li key={item.bundle.id}>
+                  <S.IngredientItem key={item.bundle.id}>
                     {item.bundle.name} ({item.count} {item.count === 1 ? 'bolo' : 'bolos'})
-                  </li>
+                  </S.IngredientItem>
                 ))}
-              </ul>
+              </S.IngredientList>
             )}
-          </div>
+          </S.StatsBox>
 
           {/* Price Range */}
-          <div className="stats-box">
+          <S.StatsBox>
             <h2>Faixa de Preços</h2>
             {cakes.length === 0 ? (
               <p>Nenhum bolo cadastrado</p>
             ) : (
-              <div className="price-range">
-                <div className="price-item">
-                  <span className="price-label">Mais barato:</span>
-                  <span className="price-value">R$ {helpers.humanizePrice(priceRange.min)}</span>
-                </div>
-                <div className="price-item">
-                  <span className="price-label">Mais caro:</span>
-                  <span className="price-value">R$ {helpers.humanizePrice(priceRange.max)}</span>
-                </div>
-                <div className="price-item">
-                  <span className="price-label">Diferença:</span>
-                  <span className="price-value">R$ {helpers.humanizePrice(priceRange.diff)}</span>
-                </div>
-              </div>
+              <S.PriceRange>
+                <S.PriceItem>
+                  <S.PriceLabel>Mais barato:</S.PriceLabel>
+                  <S.PriceValue>R$ {helpers.humanizePrice(priceRange.min)}</S.PriceValue>
+                </S.PriceItem>
+                <S.PriceItem>
+                  <S.PriceLabel>Mais caro:</S.PriceLabel>
+                  <S.PriceValue>R$ {helpers.humanizePrice(priceRange.max)}</S.PriceValue>
+                </S.PriceItem>
+                <S.PriceItem>
+                  <S.PriceLabel>Diferença:</S.PriceLabel>
+                  <S.PriceValue>R$ {helpers.humanizePrice(priceRange.diff)}</S.PriceValue>
+                </S.PriceItem>
+              </S.PriceRange>
             )}
-          </div>
+          </S.StatsBox>
 
           {/* Frame Distribution */}
-          <div className="stats-box">
+          <S.StatsBox>
             <h2>Distribuição por Tamanho</h2>
             {cakes.length === 0 ? (
               <p>Nenhum bolo cadastrado</p>
             ) : (
-              <div className="frame-distribution">
+              <S.FrameDistribution>
                 {frameDistribution.map(item => (
-                  <div key={item.frame} className="frame-item">
-                    <span className="frame-label">{item.frame}:</span>
-                    <span className="frame-value">
+                  <S.FrameItem key={item.frame}>
+                    <S.FrameLabel>{item.frame}:</S.FrameLabel>
+                    <S.FrameValue>
                       {item.count} {item.count === 1 ? 'bolo' : 'bolos'} ({item.percentage.toFixed(0)}%)
-                    </span>
-                  </div>
+                    </S.FrameValue>
+                  </S.FrameItem>
                 ))}
-              </div>
+              </S.FrameDistribution>
             )}
-          </div>
-        </div>
-      </div>
-    </div>
+          </S.StatsBox>
+        </S.StatsColumn>
+      </S.ContentSection>
+    </S.Container>
   );
 }

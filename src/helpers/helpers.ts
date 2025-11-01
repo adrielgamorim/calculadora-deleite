@@ -191,42 +191,5 @@ export const helpers = {
       
       return bundle;
     }));
-  },
-
-  promptEditIngredient(ingredient: Ingredient): Ingredient {
-    if (!ingredient) {
-      alert("Ingrediente não encontrado.");
-    }
-
-    const newName = prompt("Nome", ingredient.name);
-    if (newName === null || newName.trim() === "") {
-      alert("Nome inválido.");
-      return ingredient;
-    }
-    const newPriceStr = prompt("Preço", ingredient.price.toString());
-    const newPrice = newPriceStr ? helpers.parseDecimal(newPriceStr) : NaN;
-    if (isNaN(newPrice) || newPrice <= 0) {
-      alert("Preço inválido.");
-      return ingredient;
-    }
-    const newQuantityStr = prompt("Quantidade", ingredient.quantity.toString());
-    const newQuantity = newQuantityStr ? helpers.parseDecimal(newQuantityStr) : NaN;
-    if (isNaN(newQuantity) || newQuantity <= 0) {
-      alert("Quantidade inválida.");
-      return ingredient;
-    }
-    const newUnit = prompt("Unidade", ingredient.unit);
-    if (newUnit === null || newUnit.trim() === "") {
-      alert("Unidade inválida.");
-      return ingredient;
-    }
-
-    return {
-      ...ingredient,
-      name: newName ?? ingredient.name,
-      price: newPrice,
-      quantity: newQuantity,
-      unit: newUnit ?? ingredient.unit,
-    };
   }
 }

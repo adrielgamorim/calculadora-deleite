@@ -1,11 +1,17 @@
-import "@styles/AddItemForm.css";
 import { Frames } from "@data/Frames";
-import Select, { type MultiValue } from 'react-select';
+import ReactSelect, { type MultiValue } from 'react-select';
 import type { Ingredient } from "@models/Ingredient";
 import type { Bundle } from "@models/Bundle";
 import type { Cake } from "@models/Cake";
 import { helpers } from "@helpers/helpers";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { FormGroup } from "@components/form/FormGroup";
+import { Label } from "@components/form/Label";
+import { FormActions } from "@components/form/FormActions";
+import { Input } from "@components/atoms/Input";
+import { Select } from "@components/atoms/Select";
+import { Button } from "@components/atoms/Button";
+import * as S from "./CakeForm.styled";
 
 type CakeFormProps = {
   initialValues?: Cake | null;
@@ -24,6 +30,7 @@ type CakeFormProps = {
   bundleIngredientQuantities: Map<string, Map<string, number>>;
   setBundleIngredientQuantities: (quantities: Map<string, Map<string, number>>) => void;
   isEditing?: boolean;
+  hideActions?: boolean;
 };
 
 export function CakeForm({
@@ -42,16 +49,16 @@ export function CakeForm({
   setIngredientQuantities,
   bundleIngredientQuantities,
   setBundleIngredientQuantities,
-  isEditing = false
+  isEditing = false,
+  hideActions = false
 }: CakeFormProps) {
+  const [cakeName, setCakeName] = useState("");
+  const [cakeFrame, setCakeFrame] = useState("");
 
   useEffect(() => {
     if (initialValues) {
-      const form = document.getElementById("cake-form") as HTMLFormElement;
-      if (form) {
-        (form.elements.namedItem("cake-name") as HTMLInputElement).value = initialValues.name || "";
-        (form.elements.namedItem("cake-frame") as HTMLSelectElement).value = initialValues.frame.toString() || "";
-      }
+      setCakeName(initialValues.name || "");
+      setCakeFrame(initialValues.frame.toString() || "");
     }
   }, [initialValues]);
   
@@ -117,26 +124,38 @@ export function CakeForm({
   }
 
   return (
-    <form id="cake-form" className="modal-form">
-      <div className="form-group form-name">
-        <label htmlFor="cake-name">Nome*: </label>
-        <input id="cake-name" name="cake-name" type="text" />
-      </div>
+    <form id="cake-form">
+      <FormGroup>
+        <Label htmlFor="cake-name" required>Nome</Label>
+        <Input 
+          id="cake-name" 
+          name="cake-name" 
+          type="text" 
+          value={cakeName}
+          onChange={(e) => setCakeName(e.target.value)}
+          fullWidth 
+        />
+      </FormGroup>
       
-      <div className="form-group">
-        <label htmlFor="cake-frame">Tamanho*: </label>
-        <select id="cake-frame" name="cake-frame" defaultValue="">
+      <FormGroup>
+        <Label htmlFor="cake-frame" required>Tamanho</Label>
+        <Select 
+          id="cake-frame" 
+          name="cake-frame" 
+          value={cakeFrame}
+          onChange={(e) => setCakeFrame(e.target.value)}
+        >
           <option value="" disabled>Selecione</option>
           <option value={Frames.frame15}>15cm</option>
           <option value={Frames.frame25}>25cm</option>
           <option value={Frames.frame35}>35cm</option>
-        </select>
-      </div>
+        </Select>
+      </FormGroup>
 
       {/* Direct Ingredients Section */}
-      <div className="form-group">
-        <label htmlFor="cake-ingredients">Ingredientes Diretos: </label>
-        <Select 
+      <FormGroup>
+        <Label htmlFor="cake-ingredients">Ingredientes Diretos</Label>
+        <ReactSelect 
           options={getIngredientOptionsForSelect()} 
           value={getIngredientOptionsForSelect().filter(opt => selectedIngredientIds.includes(opt.value))}
           onChange={handleIngredientSelection} 
@@ -146,38 +165,37 @@ export function CakeForm({
           menuPortalTarget={document.body}
           styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
         />
-      </div>
+      </FormGroup>
 
       {/* Ingredient Quantities */}
       {selectedIngredientIds.length > 0 && (
-        <div className="form-group">
-          <label>Quantidades (g, ml, ou un):</label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+        <FormGroup>
+          <Label>Quantidades (g, ml, ou un)</Label>
+          <S.QuantitiesSection>
             {selectedIngredientIds.map(ingredientId => {
               const ingredient = ingredients.find(i => i.id === ingredientId);
               return (
-                <div key={ingredientId} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <label style={{ flex: 1, fontSize: '0.875rem' }}>{ingredient?.name}:</label>
-                  <input
+                <S.QuantityRow key={ingredientId}>
+                  <S.QuantityLabel>{ingredient?.name}:</S.QuantityLabel>
+                  <S.QuantityInput
                     type="number" 
                     min="0"
                     step="0.01"
-                    value={ingredientQuantities.get(ingredientId)}
-                    onChange={(e) => updateIngredientQuantity(ingredientId, parseFloat(e.target.value))}
-                    style={{ width: '120px', padding: '0.375rem', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                    value={ingredientQuantities.get(ingredientId) || 0}
+                    onChange={(e) => updateIngredientQuantity(ingredientId, parseFloat(e.target.value) || 0)}
                   />
-                  <span style={{ width: '50px', fontSize: '0.875rem' }}>{helpers.convertUnitForDisplay(ingredient?.unit || '')}</span>
-                </div>
+                  <S.Unit>{helpers.convertUnitForDisplay(ingredient?.unit || '')}</S.Unit>
+                </S.QuantityRow>
               );
             })}
-          </div>
-        </div>
+          </S.QuantitiesSection>
+        </FormGroup>
       )}
 
       {/* Bundles Section */}
-      <div className="form-group">
-        <label htmlFor="cake-bundles">Conjuntos: </label>
-        <Select 
+      <FormGroup>
+        <Label htmlFor="cake-bundles">Conjuntos</Label>
+        <ReactSelect 
           options={getBundleOptionsForSelect()} 
           value={getBundleOptionsForSelect().filter(opt => selectedBundleIds.includes(opt.value))}
           onChange={handleBundleSelection} 
@@ -187,51 +205,52 @@ export function CakeForm({
           menuPortalTarget={document.body}
           styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
         />
-      </div>
+      </FormGroup>
 
       {/* Bundle Ingredient Quantities */}
       {selectedBundleIds.length > 0 && (
-        <div className="form-group">
-          <label>Quantidades dos Conjuntos:</label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
+        <FormGroup>
+          <Label>Quantidades dos Conjuntos</Label>
+          <S.BundlesSection>
             {selectedBundleIds.map(bundleId => {
               const bundle = bundles.find(b => b.id === bundleId);
               if (!bundle?.hydratedIngredients) return null;
               
               return (
-                <div key={bundleId} style={{ padding: '12px', border: '1px solid #e5e7eb', borderRadius: '6px', backgroundColor: '#f9fafb' }}>
-                  <strong style={{ fontSize: '0.875rem', color: '#374151' }}>{bundle.name}:</strong>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                <S.BundleCard key={bundleId}>
+                  <S.BundleTitle>{bundle.name}:</S.BundleTitle>
+                  <S.BundleIngredients>
                     {bundle.hydratedIngredients.map(ingredient => (
-                      <div key={ingredient.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '12px' }}>
-                        <label style={{ flex: 1, fontSize: '0.875rem' }}>{ingredient.name}:</label>
-                        <input 
+                      <S.QuantityRow key={ingredient.id}>
+                        <S.QuantityLabel>{ingredient.name}:</S.QuantityLabel>
+                        <S.QuantityInput 
                           type="number" 
                           min="0"
                           step="0.01"
-                          value={bundleIngredientQuantities.get(bundleId)?.get(ingredient.id!)}
-                          onChange={(e) => updateBundleIngredientQuantity(bundleId, ingredient.id!, parseFloat(e.target.value))}
-                          style={{ width: '120px', padding: '0.375rem', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                          value={bundleIngredientQuantities.get(bundleId)?.get(ingredient.id!) || 0}
+                          onChange={(e) => updateBundleIngredientQuantity(bundleId, ingredient.id!, parseFloat(e.target.value) || 0)}
                         />
-                        <span style={{ width: '50px', fontSize: '0.875rem' }}>{helpers.convertUnitForDisplay(ingredient.unit)}</span>
-                      </div>
+                        <S.Unit>{helpers.convertUnitForDisplay(ingredient.unit)}</S.Unit>
+                      </S.QuantityRow>
                     ))}
-                  </div>
-                </div>
+                  </S.BundleIngredients>
+                </S.BundleCard>
               );
             })}
-          </div>
-        </div>
+          </S.BundlesSection>
+        </FormGroup>
       )}
 
-      <div className="modal-form-buttons">
-        <button type="button" className="button-secondary" onClick={onCancel}>
-          Cancelar
-        </button>
-        <button type="button" className="button-primary" onClick={onSubmit}>
-          {isEditing ? "Salvar Alterações" : "Adicionar Bolo"}
-        </button>
-      </div>
+      {!hideActions && (
+        <FormActions>
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button type="button" variant="primary" onClick={onSubmit}>
+            {isEditing ? "Salvar Alterações" : "Adicionar Bolo"}
+          </Button>
+        </FormActions>
+      )}
     </form>
   );
 }

@@ -5,7 +5,13 @@ import { Endpoints } from "@data/Endpoints";
 import { helpers } from "@helpers/helpers";
 import { useToastContext } from "@hooks/useToastContext";
 import { Modal } from "@components/Modal";
-import "@styles/AddItemForm.css";
+import { FormGroup } from "@components/form/FormGroup";
+import { Label } from "@components/form/Label";
+import { HelperText } from "@components/form/FormText";
+import { FormActions } from "@components/form/FormActions";
+import { Input } from "@components/atoms/Input";
+import { Select } from "@components/atoms/Select";
+import { Button } from "@components/atoms/Button";
 
 interface ConfigModalProps {
   isOpen: boolean;
@@ -106,36 +112,36 @@ export function ConfigModal({ isOpen, onClose }: ConfigModalProps) {
       isOpen={isOpen}
       onClose={onClose}
       title="⚙️ Configurações"
-      size="small"
+      size="medium"
     >
       <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
-        <div className="form-group">
-          <label htmlFor="conversion-rate">Taxa de conversão (%)</label>
-          <input
+        <FormGroup horizontal>
+          <Label htmlFor="conversion-rate">Taxa de conversão (%)</Label>
+          <Input
             type="text"
             id="conversion-rate"
             value={formData.conversionRate}
             onChange={(e) => handleInputChange('conversionRate', e.target.value)}
             placeholder="Ex: 30"
           />
-          <small>Margem de lucro aplicada sobre o custo base</small>
-        </div>
+          <HelperText>Margem de lucro aplicada sobre o custo base</HelperText>
+        </FormGroup>
 
-        <div className="form-group">
-          <label htmlFor="ifood-tax">Taxa do iFood (%)</label>
-          <input
+        <FormGroup horizontal>
+          <Label htmlFor="ifood-tax">Taxa do iFood (%)</Label>
+          <Input
             type="text"
             id="ifood-tax"
             value={formData.ifoodTax}
             onChange={(e) => handleInputChange('ifoodTax', e.target.value)}
             placeholder="Ex: 15"
           />
-          <small>Taxa cobrada pela plataforma de delivery</small>
-        </div>
+          <HelperText>Taxa cobrada pela plataforma de delivery</HelperText>
+        </FormGroup>
 
-        <div className="form-group">
-          <label htmlFor="rounding-strategy">Estratégia de arredondamento</label>
-          <select
+        <FormGroup horizontal>
+          <Label htmlFor="rounding-strategy">Estratégia de arredondamento</Label>
+          <Select
             id="rounding-strategy"
             value={formData.roundingStrategy}
             onChange={(e) => handleInputChange('roundingStrategy', e.target.value as ConfigModel["roundingStrategy"])}
@@ -144,62 +150,62 @@ export function ConfigModal({ isOpen, onClose }: ConfigModalProps) {
             <option value="to_90">Arredondar para .90</option>
             <option value="to_50">Arredondar para .50</option>
             <option value="to_integer">Arredondar para inteiro</option>
-          </select>
-          <small>Como arredondar os preços finais</small>
-        </div>
+          </Select>
+          <HelperText>Como arredondar os preços finais</HelperText>
+        </FormGroup>
 
-        <div className="form-group">
-          <label htmlFor="frame15-packaging-price">Embalagem aro 15 (R$)</label>
-          <input
+        <FormGroup horizontal>
+          <Label htmlFor="frame15-packaging-price">Embalagem aro 15 (R$)</Label>
+          <Input
             type="text"
             id="frame15-packaging-price"
             value={formData.frame15PackagingPrice}
             onChange={(e) => handleInputChange('frame15PackagingPrice', e.target.value)}
             placeholder="Ex: 5,00"
           />
-        </div>
+        </FormGroup>
 
-        <div className="form-group">
-          <label htmlFor="frame25-packaging-price">Embalagem aro 25 (R$)</label>
-          <input
+        <FormGroup horizontal>
+          <Label htmlFor="frame25-packaging-price">Embalagem aro 25 (R$)</Label>
+          <Input
             type="text"
             id="frame25-packaging-price"
             value={formData.frame25PackagingPrice}
             onChange={(e) => handleInputChange('frame25PackagingPrice', e.target.value)}
             placeholder="Ex: 7,00"
           />
-        </div>
+        </FormGroup>
 
-        <div className="form-group">
-          <label htmlFor="frame35-packaging-price">Embalagem aro 35 (R$)</label>
-          <input
+        <FormGroup horizontal>
+          <Label htmlFor="frame35-packaging-price">Embalagem aro 35 (R$)</Label>
+          <Input
             type="text"
             id="frame35-packaging-price"
             value={formData.frame35PackagingPrice}
             onChange={(e) => handleInputChange('frame35PackagingPrice', e.target.value)}
             placeholder="Ex: 10,00"
           />
-        </div>
+        </FormGroup>
 
-        <div className="form-group">
-          <label htmlFor="slice-packaging-price">Embalagem fatia (R$)</label>
-          <input
+        <FormGroup horizontal>
+          <Label htmlFor="slice-packaging-price">Embalagem fatia (R$)</Label>
+          <Input
             type="text"
             id="slice-packaging-price"
             value={formData.slicePackagingPrice}
             onChange={(e) => handleInputChange('slicePackagingPrice', e.target.value)}
             placeholder="Ex: 1,50"
           />
-        </div>
+        </FormGroup>
 
-        <div className="form-actions">
-          <button type="button" onClick={onClose} className="btn-secondary">
+        <FormActions>
+          <Button type="button" onClick={onClose} variant="secondary">
             Cancelar
-          </button>
-          <button type="submit" className="btn-primary">
+          </Button>
+          <Button type="submit" variant="primary">
             Salvar Configurações
-          </button>
-        </div>
+          </Button>
+        </FormActions>
       </form>
     </Modal>
   );
